@@ -1,0 +1,13 @@
+﻿{
+  "Tasks": [
+    {
+      "TaskMethod": "Frends.Community.Azure.Blob.Upload.UploadFileAsync"
+    },
+    {
+      "TaskMethod": "Frends.Community.Azure.Blob.Delete.DeleteBlobAsync"
+    },
+    {
+      "TaskMethod": "Frends.Community.Azure.Blob.Delete.DeleteContainerAsync"
+    }
+  ]
+}
