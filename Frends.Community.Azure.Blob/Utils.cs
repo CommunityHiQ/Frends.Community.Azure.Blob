@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage;
 
 namespace Frends.Community.Azure.Blob
@@ -37,7 +32,7 @@ namespace Frends.Community.Azure.Blob
                     cloudBlob = container.GetPageBlobReference(blobName);
                     break;
                 default:
-                    cloudBlob = container.GetBlobReference(blobName);
+                    cloudBlob = container.GetBlockBlobReference(blobName);
                     break;
             }
 

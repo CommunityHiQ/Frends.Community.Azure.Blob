@@ -75,7 +75,7 @@ namespace Frends.Community.Azure.Blob.Tests
         }
         
         [TestMethod]
-        public async Task DeleteContainer_ShouldReturnTrueWithNonexistingContainer()
+        public async Task DeleteContainerAsync_ShouldReturnTrueWithNonexistingContainer()
         {
             var container = Guid.NewGuid().ToString();
             var options = new DeleteOptions { ConnectionString = _connectionString };

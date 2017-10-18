@@ -62,11 +62,15 @@ namespace Frends.Community.Azure.Blob
                 }
             };
 
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
-
             // begin and await for upload to complete
-            await TransferManager.UploadAsync(input.SourceFile, destinationBlob, uploadOptions, transferContext, cancellationToken);
+            try
+            {
+                await TransferManager.UploadAsync(input.SourceFile, destinationBlob, uploadOptions, transferContext, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("UploadFileAsync: Error occured while uploading file to blob storage", e);
+            }
 
             // return uri to uploaded blob
             return destinationBlob.Uri.ToString();

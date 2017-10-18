@@ -1,4 +1,5 @@
 ﻿using Microsoft.WindowsAzure.Storage.Blob;
+using System;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,10 +40,14 @@ namespace Frends.Community.Azure.Blob
                 return true;
             }
 
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
-
-            return await blob.DeleteIfExistsAsync(cancellationToken);
+            try
+            {
+                return await blob.DeleteIfExistsAsync(cancellationToken);
+            }
+            catch(Exception e)
+            {
+                throw new Exception("DeleteBlobAsync: Error occured while trying to delete blob", e);
+            }
         }
 
         /// <summary>
@@ -65,11 +70,15 @@ namespace Frends.Community.Azure.Blob
                 return true;
             }
 
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
-
             // delete container
-            return await container.DeleteIfExistsAsync(cancellationToken);
+            try
+            { 
+                return await container.DeleteIfExistsAsync(cancellationToken);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("DeleteContainerAsync: Error occured while trying to delete blob container", e);
+            }
         }
     }
 

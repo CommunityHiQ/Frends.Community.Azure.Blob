@@ -38,7 +38,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException), "Should have thrown exception with nonexisting file")]
-        public async Task UploadFile_ShouldThrowArgumentExceptionIfFileWasNotFound()
+        public async Task UploadFileAsync_ShouldThrowArgumentExceptionIfFileWasNotFound()
         {
             await Upload.UploadFileAsync(
                 new UploadInput { SourceFile = "NonExistingFile" },
@@ -47,7 +47,7 @@ namespace Frends.Community.Azure.Blob.Tests
         }
 
         [TestMethod]
-        public async Task UploadFile_ShouldUploadFileAsBlockBlob()
+        public async Task UploadFileAsync_ShouldUploadFileAsBlockBlob()
         {
             var input = new UploadInput
             {
@@ -71,7 +71,7 @@ namespace Frends.Community.Azure.Blob.Tests
         }
 
         [TestMethod]
-        public async Task UploadFile_ShouldRenameFileToBlob()
+        public async Task UploadFileAsync_ShouldRenameFileToBlob()
         {
             var input = new UploadInput
             {
