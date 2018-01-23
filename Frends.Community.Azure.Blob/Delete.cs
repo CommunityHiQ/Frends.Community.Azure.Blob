@@ -1,27 +1,30 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Frends.Tasks.Attributes;
+using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
+
+#pragma warning disable CS1591 
 
 namespace Frends.Community.Azure.Blob
 {
     public class Delete
     {
         /// <summary>
-        /// Deletes a single blob from Azure blob storage.
+        /// Deletes a single blob from Azure blob storage. See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
         /// </summary>
         /// <param name="target">Blob to delete</param>
-        /// <param name="options">Connection options</param>
+        /// <param name="connectionProperties"></param>
         /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Boolean indicating whether the operation was successful or not</returns>
-        public static async Task<bool> DeleteBlobAsync(DeleteTarget target, DeleteOptions options, CancellationToken cancellationToken)
+        /// <returns>Object { bool Success }</returns>
+        public static async Task<DeleteOutput> DeleteBlobAsync(DeleteBlobProperties target, BlobConnectionProperties connectionProperties, CancellationToken cancellationToken)
         {
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
 
             // get container
-            CloudBlobContainer container = Utils.GetBlobContainer(options.ConnectionString, target.ContainerName);
+            CloudBlobContainer container = Utils.GetBlobContainer(connectionProperties.ConnectionString, connectionProperties.ContainerName);
 
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
@@ -29,7 +32,7 @@ namespace Frends.Community.Azure.Blob
             // if container doesn't exist, exit ok
             if (!await container.ExistsAsync())
             {
-                return true;
+                return new DeleteOutput { Success = true };
             }
 
             // get the destination blob, rename if necessary
@@ -37,12 +40,13 @@ namespace Frends.Community.Azure.Blob
             
             if(!await blob.ExistsAsync(cancellationToken))
             {
-                return true;
+                return new DeleteOutput { Success = true };
             }
 
             try
             {
-                return await blob.DeleteIfExistsAsync(cancellationToken);
+                var result = await blob.DeleteIfExistsAsync(cancellationToken);
+                return new DeleteOutput { Success = result };
             }
             catch(Exception e)
             {
@@ -51,29 +55,30 @@ namespace Frends.Community.Azure.Blob
         }
 
         /// <summary>
-        /// Deletes a whole container from Azure blob storage
+        /// Deletes a whole container from Azure blob storage. See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
         /// </summary>
-        /// <param name="containerName">Name of the container to delete</param>
-        /// <param name="options">Connection options</param>
+        /// <param name="target"></param>
+        /// <param name="ConnectionProperties"></param>
         /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Boolean indicating whether the operation was successful or not</returns>
-        public static async Task<bool> DeleteContainerAsync(string containerName, DeleteOptions options, CancellationToken cancellationToken)
+        /// <returns>Object { bool Success }</returns>
+        public static async Task<DeleteOutput> DeleteContainerAsync(DeleteContainerProperties target, ContainerConnectionProperties ConnectionProperties, CancellationToken cancellationToken)
         {
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
 
             // get container
-            CloudBlobContainer container = Utils.GetBlobContainer(options.ConnectionString, containerName);
+            CloudBlobContainer container = Utils.GetBlobContainer(ConnectionProperties.ConnectionString, target.ContainerName);
 
             if(!await container.ExistsAsync())
             {
-                return true;
+                return new DeleteOutput { Success = true };
             }
 
             // delete container
             try
             { 
-                return await container.DeleteIfExistsAsync(cancellationToken);
+                var result = await container.DeleteIfExistsAsync(cancellationToken);
+                return new DeleteOutput { Success = result };
             }
             catch (Exception e)
             {
@@ -82,31 +87,60 @@ namespace Frends.Community.Azure.Blob
         }
     }
 
-    public class DeleteOptions
+    public class DeleteOutput
+    {
+        public bool Success { get; set; }
+    }
+
+    public class DeleteContainerProperties
+    {
+        /// <summary>
+        /// Name of the container to delete
+        /// </summary>
+        [DefaultDisplayType(DisplayType.Text)]
+        public string ContainerName { get; set; }
+    }
+
+    public class ContainerConnectionProperties
     {
         /// <summary>
         /// Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
+        [DefaultDisplayType(DisplayType.Text)]
         public string ConnectionString { get; set; }
     }
 
-    public class DeleteTarget
+    public class BlobConnectionProperties
     {
         /// <summary>
-        /// Name of the blob to delete
+        /// Connection string to Azure storage
         /// </summary>
-        [DisplayName("Blob name")]
-        [DefaultValue("TestFile.xml")]
-        public string BlobName { get; set; }
+        [DefaultValue("UseDevelopmentStorage=true")]
+        [DisplayName("Connection String")]
+        [DefaultDisplayType(DisplayType.Text)]
+        public string ConnectionString { get; set; }
 
         /// <summary>
         /// Name of the container where delete blob exists.
         /// </summary>
         [DisplayName("Blob Container Name")]
         [DefaultValue("test-container")]
+        [DefaultDisplayType(DisplayType.Text)]
         public string ContainerName { get; set; }
+
+    }
+
+    public class DeleteBlobProperties
+    {
+        /// <summary>
+        /// Name of the blob to delete
+        /// </summary>
+        [DisplayName("Blob name")]
+        [DefaultValue("TestFile.xml")]
+        [DefaultDisplayType(DisplayType.Text)]
+        public string BlobName { get; set; }
 
         /// <summary>
         /// Type of blob to delete: Append, Block or Page
