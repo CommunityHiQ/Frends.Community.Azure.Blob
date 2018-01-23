@@ -4,6 +4,15 @@
       "TaskMethod": "Frends.Community.Azure.Blob.Upload.UploadFileAsync"
     },
     {
+      "TaskMethod": "Frends.Community.Azure.Blob.List.ListBlobs"
+    },
+    {
+      "TaskMethod": "Frends.Community.Azure.Blob.Download.DownloadBlobAsync"
+    },
+    {
+      "TaskMethod": "Frends.Community.Azure.Blob.Download.ReadBlobContentAsync"
+    },
+    {
       "TaskMethod": "Frends.Community.Azure.Blob.Delete.DeleteBlobAsync"
     },
     {
