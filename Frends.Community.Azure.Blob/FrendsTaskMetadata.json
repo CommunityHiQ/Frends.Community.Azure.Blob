@@ -1,22 +1,22 @@
 ﻿{
   "Tasks": [
     {
-      "TaskMethod": "Frends.Community.Azure.Blob.Upload.UploadFileAsync"
+      "TaskMethod": "Frends.Community.Azure.Blob.UploadTask.UploadFileAsync"
     },
     {
-      "TaskMethod": "Frends.Community.Azure.Blob.List.ListBlobs"
+      "TaskMethod": "Frends.Community.Azure.Blob.ListTask.ListBlobs"
     },
     {
-      "TaskMethod": "Frends.Community.Azure.Blob.Download.DownloadBlobAsync"
+      "TaskMethod": "Frends.Community.Azure.Blob.DownloadTask.DownloadBlobAsync"
     },
     {
-      "TaskMethod": "Frends.Community.Azure.Blob.Download.ReadBlobContentAsync"
+      "TaskMethod": "Frends.Community.Azure.Blob.DownloadTask.ReadBlobContentAsync"
     },
     {
-      "TaskMethod": "Frends.Community.Azure.Blob.Delete.DeleteBlobAsync"
+      "TaskMethod": "Frends.Community.Azure.Blob.DeleteTask.DeleteBlobAsync"
     },
     {
-      "TaskMethod": "Frends.Community.Azure.Blob.Delete.DeleteContainerAsync"
+      "TaskMethod": "Frends.Community.Azure.Blob.DeleteTask.DeleteContainerAsync"
     }
   ]
 }

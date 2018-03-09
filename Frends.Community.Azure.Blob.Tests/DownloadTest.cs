@@ -34,7 +34,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
         private SourceProperties _source;
         private DestinationFileProperties _destination;
-        private BlobContentProperties _content;
+        //private BlobContentProperties _content;
         private CancellationToken _cancellationToken;
 
         [SetUp]
@@ -46,7 +46,6 @@ namespace Frends.Community.Azure.Blob.Tests
             // task properties
             _source = new SourceProperties { ConnectionString = _connectionString, BlobName = _testBlob, BlobType = AzureBlobType.Block, ContainerName = _containerName };
             _destination = new DestinationFileProperties { Directory = _destinationDirectory, FileExistsOperation = FileExistsAction.Overwrite };
-            _content = new BlobContentProperties { EncodingName = "UTF-8" };
             _cancellationToken = new CancellationToken();
 
 
@@ -76,7 +75,7 @@ namespace Frends.Community.Azure.Blob.Tests
         [Test]
         public async Task ReadBlobContentAsync_ReturnsContentString()
         {
-            var result = await Download.ReadBlobContentAsync(_source, _content, _cancellationToken);
+            var result = await DownloadTask.ReadBlobContentAsync(_source, _cancellationToken);
 
             Assert.IsTrue(result.Content.Contains(@"<input>WhatHasBeenSeenCannotBeUnseen</input>"));
         }
@@ -84,7 +83,7 @@ namespace Frends.Community.Azure.Blob.Tests
         [Test]
         public async Task DownloadBlobAsync_WritesBlobToFile()
         {
-            var result = await Download.DownloadBlobAsync(_source, _destination, _cancellationToken);
+            var result = await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
 
             Assert.IsTrue(File.Exists(result.FullPath));
             var fileContent = File.ReadAllText(result.FullPath);
@@ -94,19 +93,19 @@ namespace Frends.Community.Azure.Blob.Tests
         [Test]
         public async Task DownloadBlobAsync_ThrowsExceptionIfDestinationFileExists()
         {
-            await Download.DownloadBlobAsync(_source, _destination, _cancellationToken);
+            await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
             _destination.FileExistsOperation = FileExistsAction.Error;
 
-            Assert.ThrowsAsync<IOException>(async () => await Download.DownloadBlobAsync(_source, _destination, _cancellationToken));
+            Assert.ThrowsAsync<IOException>(async () => await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken));
         }
 
         [Test]
         public async Task DownloadBlobAsync_RenamesFileIfExists()
         {
-            await Download.DownloadBlobAsync(_source, _destination, _cancellationToken);
+            await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
             _destination.FileExistsOperation = FileExistsAction.Rename;
 
-            var result = await Download.DownloadBlobAsync(_source, _destination, _cancellationToken);
+            var result = await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
 
             Assert.AreEqual("test-blob(1).txt", result.FileName);
         }
@@ -116,9 +115,9 @@ namespace Frends.Community.Azure.Blob.Tests
         {
             // download file with same name couple of time
             _destination.FileExistsOperation = FileExistsAction.Overwrite;
-            await Download.DownloadBlobAsync(_source, _destination, _cancellationToken);
-            await Download.DownloadBlobAsync(_source, _destination, _cancellationToken);
-            await Download.DownloadBlobAsync(_source, _destination, _cancellationToken);
+            await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
+            await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
+            await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
 
             // only one file should exist in destination folder
             Assert.AreEqual(1, Directory.GetFiles(_destinationDirectory).Length);

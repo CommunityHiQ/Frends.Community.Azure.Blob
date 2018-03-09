@@ -61,7 +61,7 @@ namespace Frends.Community.Azure.Blob.Tests
         [Test]
         public void ListBlobs_ReturnBlockAndDirectory()
         {
-            var result = List.ListBlobs(_sourceProperties);
+            var result = ListTask.ListBlobs(_sourceProperties);
 
             Assert.AreEqual(2, result.Blobs.Count);
             Assert.AreEqual("Block", result.Blobs[1].BlobType);
@@ -74,7 +74,7 @@ namespace Frends.Community.Azure.Blob.Tests
         public void ListBlobsWithPrefix()
         {
             _sourceProperties.FlatBlobListing = true;
-            var result = List.ListBlobs(_sourceProperties);
+            var result = ListTask.ListBlobs(_sourceProperties);
 
             Assert.AreEqual(2, result.Blobs.Count);
         }

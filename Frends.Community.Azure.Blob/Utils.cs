@@ -2,7 +2,7 @@
 using Microsoft.WindowsAzure.Storage;
 using System.IO;
 
-#pragma warning disable CS1591 
+#pragma warning disable CS1591
 
 namespace Frends.Community.Azure.Blob
 {

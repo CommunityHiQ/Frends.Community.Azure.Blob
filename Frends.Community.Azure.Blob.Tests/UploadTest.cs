@@ -35,7 +35,7 @@ namespace Frends.Community.Azure.Blob.Tests
         [Test]
         public async Task UploadFileAsync_ShouldThrowArgumentExceptionIfFileWasNotFound()
         {
-            Assert.ThrowsAsync<ArgumentException>(async () => await Upload.UploadFileAsync(
+            Assert.ThrowsAsync<ArgumentException>(async () => await UploadTask.UploadFileAsync(
                 new UploadInput { SourceFile = "NonExistingFile" },
                 new DestinationProperties(),
                 new CancellationToken()));
@@ -58,7 +58,7 @@ namespace Frends.Community.Azure.Blob.Tests
             };
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
 
-            var result = await Upload.UploadFileAsync(input, options, new CancellationToken());
+            var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
             var blobResult = Utils.GetCloudBlob(container, "TestFile.xml", AzureBlobType.Block);
 
             StringAssert.EndsWith("test-container/TestFile.xml", result.Uri);
@@ -82,7 +82,7 @@ namespace Frends.Community.Azure.Blob.Tests
                 Overwrite = true
             };
 
-            var result = await Upload.UploadFileAsync(input, options, new CancellationToken());
+            var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
 
             StringAssert.EndsWith("test-container/RenamedFile.xml", result.Uri);
         }

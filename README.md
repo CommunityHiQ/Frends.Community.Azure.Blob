@@ -176,4 +176,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 
 | Version | Changes |
 | ----- | ----- |
-| 1.1.0 | Wrote documentation according to development quide lines. Added DownloadBlobAsync, ReadBlobContentAsync and ListBlobs tasks. |
+| 1.2.0 | Wrote documentation according to development quide lines. Added DownloadBlobAsync, ReadBlobContentAsync and ListBlobs tasks. |
