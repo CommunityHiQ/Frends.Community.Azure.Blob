@@ -1,12 +1,12 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
-    [TestFixture]
+    [TestClass]
     public class UploadTest
     {
         /// <summary>
@@ -24,7 +24,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// </summary>
         private string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
 
-        [TearDown]
+        [TestCleanup]
         public async Task Cleanup()
         {
             // delete whole container after running tests
@@ -32,16 +32,17 @@ namespace Frends.Community.Azure.Blob.Tests
             await container.DeleteIfExistsAsync();
         }
 
-        [Test]
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
         public async Task UploadFileAsync_ShouldThrowArgumentExceptionIfFileWasNotFound()
         {
-            Assert.ThrowsAsync<ArgumentException>(async () => await UploadTask.UploadFileAsync(
+            var result = await UploadTask.UploadFileAsync(
                 new UploadInput { SourceFile = "NonExistingFile" },
                 new DestinationProperties(),
-                new CancellationToken()));
+                new CancellationToken());
         }
 
-        [Test]
+        [TestMethod]
         public async Task UploadFileAsync_ShouldUploadFileAsBlockBlob()
         {
             var input = new UploadInput
@@ -65,7 +66,7 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.IsTrue(blobResult.Exists(), "Uploaded TestFile.xml blob should exist");
         }
 
-        [Test]
+        [TestMethod]
         public async Task UploadFileAsync_ShouldRenameFileToBlob()
         {
             var input = new UploadInput

@@ -1,14 +1,14 @@
 ﻿using Microsoft.WindowsAzure.Storage.Blob;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
-    [TestFixture]
+    [TestClass]
     class ListTests
     {
         /// <summary>
@@ -33,7 +33,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
         private ListSourceProperties _sourceProperties;
 
-        [SetUp]
+        [TestInitialize]
         public async Task TestSetup()
         {
             _sourceProperties = new ListSourceProperties { ConnectionString = _connectionString, ContainerName = _containerName, FlatBlobListing = false };
@@ -50,7 +50,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
         }
 
-        [TearDown]
+        [TestCleanup]
         public async Task Cleanup()
         {
             // delete whole container after running tests
@@ -58,7 +58,7 @@ namespace Frends.Community.Azure.Blob.Tests
             await container.DeleteIfExistsAsync();
         }
 
-        [Test]
+        [TestMethod]
         public void ListBlobs_ReturnBlockAndDirectory()
         {
             var result = ListTask.ListBlobs(_sourceProperties);
@@ -70,7 +70,7 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.AreEqual("Directory", result.Blobs[0].BlobType);
         }
 
-        [Test]
+        [TestMethod]
         public void ListBlobsWithPrefix()
         {
             _sourceProperties.FlatBlobListing = true;

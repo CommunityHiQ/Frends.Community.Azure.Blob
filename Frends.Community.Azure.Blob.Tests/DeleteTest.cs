@@ -1,12 +1,12 @@
 ﻿using Microsoft.WindowsAzure.Storage.Blob;
-using NUnit.Framework;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
-    [TestFixture]
+    [TestClass]
     class DeleteTest
     {
         /// <summary>
@@ -24,7 +24,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// </summary>
         private string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
 
-        [TearDown]
+        [TestCleanup]
         public async Task Cleanup()
         {
             // delete whole container after running tests
@@ -32,7 +32,7 @@ namespace Frends.Community.Azure.Blob.Tests
             await container.DeleteIfExistsAsync();
         }
 
-        [Test]
+        [TestMethod]
         public async Task DeleteBlobAsync_ShouldReturnTrueWithNonexistingBlob()
         {
             var input = new DeleteBlobProperties
@@ -52,7 +52,7 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.IsTrue(result.Success, "DeleteBlob should've returned true when trying to delete non existing blob");
         }
 
-        [Test]
+        [TestMethod]
         public async Task DeleteBlobAsync_ShouldReturnTrueWithNonexistingContainer()
         {
             var input = new DeleteBlobProperties
@@ -70,7 +70,7 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.IsTrue(result.Success, "DeleteBlob should've returned true when trying to delete blob in non existing container");
         }
 
-        [Test]
+        [TestMethod]
         public async Task DeleteContainerAsync_ShouldReturnTrueWithNonexistingContainer()
         {
             var inputProperties = new DeleteContainerProperties { ContainerName = Guid.NewGuid().ToString() };
