@@ -1,17 +1,17 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
-    [TestFixture]
+    [TestClass]
     class UtilsTests
     {
         private string _testDirectory;
         private string _existingFileName;
 
-        [SetUp]
+        [TestInitialize]
         public void TestSetup()
         {
             _existingFileName = "existing_file.txt";
@@ -22,7 +22,7 @@ namespace Frends.Community.Azure.Blob.Tests
             File.WriteAllText(Path.Combine(_testDirectory, _existingFileName), "I'm walking here! I'm walking here!");
         }
 
-        [TearDown]
+        [TestCleanup]
         public void TestCleanup()
         {
             // remove all test files and directory
@@ -30,7 +30,7 @@ namespace Frends.Community.Azure.Blob.Tests
                 Directory.Delete(_testDirectory, true);
         }
 
-        [Test]
+        [TestMethod]
         public void GetRenamedFileName_DoesNotRename_If_FileName_Is_Available()
         {
             var fileName = "new_file_name.txt";
@@ -39,7 +39,7 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.AreEqual(fileName, result);
         }
 
-        [Test]
+        [TestMethod]
         public void GetRenamedFileName_AddsNumberInParenthesis()
         {
             var result = Utils.GetRenamedFileName(_existingFileName, _testDirectory);
@@ -48,7 +48,7 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.IsTrue(result.Contains("(1)"));
         }
 
-        [Test]
+        [TestMethod]
         public void GetRenamedFileName_IncrementsNumberUntillAvailableFileNameIsFound()
         {
             //create files ..(1) to ...(10)

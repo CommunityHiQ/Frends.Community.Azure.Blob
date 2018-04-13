@@ -1,13 +1,13 @@
 ﻿using Microsoft.WindowsAzure.Storage.Blob;
-using NUnit.Framework;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
-    [TestFixture]
+    [TestClass]
     class DownloadTest
     {
         /// <summary>
@@ -37,7 +37,7 @@ namespace Frends.Community.Azure.Blob.Tests
         //private BlobContentProperties _content;
         private CancellationToken _cancellationToken;
 
-        [SetUp]
+        [TestInitialize]
         public async Task TestSetup()
         {
             _destinationDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -60,7 +60,7 @@ namespace Frends.Community.Azure.Blob.Tests
             await blockBlob.UploadFromFileAsync(_testFilePath);
         }
 
-        [TearDown]
+        [TestCleanup]
         public async Task Cleanup()
         {
             // delete whole container after running tests
@@ -72,7 +72,7 @@ namespace Frends.Community.Azure.Blob.Tests
                 Directory.Delete(_destinationDirectory, true);
         }
 
-        [Test]
+        [TestMethod]
         public async Task ReadBlobContentAsync_ReturnsContentString()
         {
             var result = await DownloadTask.ReadBlobContentAsync(_source, _cancellationToken);
@@ -80,7 +80,7 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.IsTrue(result.Content.Contains(@"<input>WhatHasBeenSeenCannotBeUnseen</input>"));
         }
 
-        [Test]
+        [TestMethod]
         public async Task DownloadBlobAsync_WritesBlobToFile()
         {
             var result = await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
@@ -90,16 +90,17 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.IsTrue(fileContent.Contains(@"<input>WhatHasBeenSeenCannotBeUnseen</input>"));
         }
 
-        [Test]
+        [TestMethod]
+        [ExpectedException(typeof(IOException))]
         public async Task DownloadBlobAsync_ThrowsExceptionIfDestinationFileExists()
         {
             await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
             _destination.FileExistsOperation = FileExistsAction.Error;
 
-            Assert.ThrowsAsync<IOException>(async () => await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken));
+            var result = await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
         }
 
-        [Test]
+        [TestMethod]
         public async Task DownloadBlobAsync_RenamesFileIfExists()
         {
             await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
@@ -110,7 +111,7 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.AreEqual("test-blob(1).txt", result.FileName);
         }
 
-        [Test]
+        [TestMethod]
         public async Task DownloadBlobAsync_OverwritesFileIfExists()
         {
             // download file with same name couple of time
