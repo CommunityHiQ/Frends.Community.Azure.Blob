@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Frends.Tasks.Attributes;
+using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.DataMovement;
 using System;
 using System.ComponentModel;
@@ -7,16 +8,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
+#pragma warning disable CS1591 
+
 namespace Frends.Community.Azure.Blob
 {
-    public class Upload
+    public class UploadTask
     {
         /// <summary>
-        /// Uploads a single file to Azure blob storage.
+        /// Uploads a single file to Azure blob storage. See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
         /// Will create given container on connection if necessary.
         /// </summary>
-        /// <returns></returns>
-        public static async Task<string> UploadFileAsync(UploadInput input, UploadOptions options, CancellationToken cancellationToken)
+        /// <returns>Object { string Uri, string SourceFile }</returns>
+        public static async Task<UploadOutput> UploadFileAsync(UploadInput input, DestinationProperties destinationProperties, CancellationToken cancellationToken)
         {
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
@@ -29,7 +32,7 @@ namespace Frends.Community.Azure.Blob
             }
 
             // get container
-            CloudBlobContainer container = Utils.GetBlobContainer(options.ConnectionString, options.ContainerName);
+            CloudBlobContainer container = Utils.GetBlobContainer(destinationProperties.ConnectionString, destinationProperties.ContainerName);
 
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
@@ -38,19 +41,19 @@ namespace Frends.Community.Azure.Blob
             await container.CreateIfNotExistsAsync(cancellationToken);
 
             // get the destination blob, rename if necessary
-            CloudBlob destinationBlob = Utils.GetCloudBlob(container, string.IsNullOrWhiteSpace(options.RenameTo) ? fi.Name : options.RenameTo, options.BlobType);
+            CloudBlob destinationBlob = Utils.GetCloudBlob(container, string.IsNullOrWhiteSpace(destinationProperties.RenameTo) ? fi.Name : destinationProperties.RenameTo, destinationProperties.BlobType);
 
             // delete blob if user requested overwrite
-            if (options.Overwrite)
+            if (destinationProperties.Overwrite)
             {
                 await destinationBlob.DeleteIfExistsAsync(cancellationToken);
             }
 
             // setup the number of the concurrent operations
-            TransferManager.Configurations.ParallelOperations = options.ParallelOperations;
+            TransferManager.Configurations.ParallelOperations = destinationProperties.ParallelOperations;
 
             // Use UploadOptions to set ContentType of destination CloudBlob
-            Microsoft.WindowsAzure.Storage.DataMovement.UploadOptions uploadOptions = new Microsoft.WindowsAzure.Storage.DataMovement.UploadOptions();
+            Microsoft.WindowsAzure.Storage.DataMovement.UploadOptions uploadOptions = new UploadOptions();
 
             // Setup the transfer context and track the upload progress
             SingleTransferContext transferContext = new SingleTransferContext
@@ -72,18 +75,25 @@ namespace Frends.Community.Azure.Blob
                 throw new Exception("UploadFileAsync: Error occured while uploading file to blob storage", e);
             }
 
-            // return uri to uploaded blob
-            return destinationBlob.Uri.ToString();
+            // return uri to uploaded blob and source file path
+            return new UploadOutput { SourceFile = input.SourceFile, Uri = destinationBlob.Uri.ToString() };
         }
     }
 
-    public class UploadOptions
+    public class UploadOutput
+    {
+        public string SourceFile { get; set; }
+        public string Uri { get; set; }
+    }
+
+    public class DestinationProperties
     {
         /// <summary>
         /// Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
+        [DefaultDisplayType(DisplayType.Text)]
         public string ConnectionString { get; set; }
 
         /// <summary>
@@ -94,6 +104,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DefaultValue("test-container")]
         [DisplayName("Container Name")]
+        [DefaultDisplayType(DisplayType.Text)]
         public string ContainerName { get; set; }
 
         /// <summary>
@@ -108,6 +119,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DefaultValue("")]
         [DisplayName("Rename source file")]
+        [DefaultDisplayType(DisplayType.Text)]
         public string RenameTo { get; set; }
 
         /// <summary>
@@ -117,6 +129,10 @@ namespace Frends.Community.Azure.Blob
         [DisplayName("Overwrite existing file")]
         public bool Overwrite { get; set; }
 
+
+        /// <summary>
+        /// How many work items to process concurrently.
+        /// </summary>
         [DefaultValue(64)]
         [DisplayName("Parallel Operation")]
         public int ParallelOperations { get; set; }
@@ -126,6 +142,7 @@ namespace Frends.Community.Azure.Blob
     {
         [DefaultValue(@"c:\temp\TestFile.xml")]
         [DisplayName("Source File")]
+        [DefaultDisplayType(DisplayType.Text)]
         public string SourceFile { get; set; }
     }
 

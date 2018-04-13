@@ -1,16 +1,12 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Blob;
-using System.Threading.Tasks;
+﻿using NUnit.Framework;
+using System;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
-    /// <summary>
-    /// Note, you need Azure Storage Emulator 5.2 up and running to run these tests
-    /// https://azure.microsoft.com/en-us/downloads/
-    /// </summary>
-    [TestClass]
+    [TestFixture]
     public class UploadTest
     {
         /// <summary>
@@ -27,8 +23,8 @@ namespace Frends.Community.Azure.Blob.Tests
         /// Some random file for test purposes
         /// </summary>
         private string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
-        
-        [TestCleanup]
+
+        [TearDown]
         public async Task Cleanup()
         {
             // delete whole container after running tests
@@ -36,24 +32,23 @@ namespace Frends.Community.Azure.Blob.Tests
             await container.DeleteIfExistsAsync();
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentException), "Should have thrown exception with nonexisting file")]
+        [Test]
         public async Task UploadFileAsync_ShouldThrowArgumentExceptionIfFileWasNotFound()
         {
-            await Upload.UploadFileAsync(
+            Assert.ThrowsAsync<ArgumentException>(async () => await UploadTask.UploadFileAsync(
                 new UploadInput { SourceFile = "NonExistingFile" },
-                new UploadOptions(),
-                new CancellationToken());
+                new DestinationProperties(),
+                new CancellationToken()));
         }
 
-        [TestMethod]
+        [Test]
         public async Task UploadFileAsync_ShouldUploadFileAsBlockBlob()
         {
             var input = new UploadInput
             {
                 SourceFile = _testFilePath
             };
-            var options = new UploadOptions
+            var options = new DestinationProperties
             {
                 ContainerName = _containerName,
                 BlobType = AzureBlobType.Block,
@@ -63,21 +58,21 @@ namespace Frends.Community.Azure.Blob.Tests
             };
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
 
-            string uriResult = await Upload.UploadFileAsync(input, options, new CancellationToken());
+            var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
             var blobResult = Utils.GetCloudBlob(container, "TestFile.xml", AzureBlobType.Block);
 
-            StringAssert.EndsWith(uriResult, "test-container/TestFile.xml");
+            StringAssert.EndsWith("test-container/TestFile.xml", result.Uri);
             Assert.IsTrue(blobResult.Exists(), "Uploaded TestFile.xml blob should exist");
         }
 
-        [TestMethod]
+        [Test]
         public async Task UploadFileAsync_ShouldRenameFileToBlob()
         {
             var input = new UploadInput
             {
                 SourceFile = _testFilePath
             };
-            var options = new UploadOptions
+            var options = new DestinationProperties
             {
                 RenameTo = "RenamedFile.xml",
                 ContainerName = "test-container",
@@ -87,9 +82,9 @@ namespace Frends.Community.Azure.Blob.Tests
                 Overwrite = true
             };
 
-            string result = await Upload.UploadFileAsync(input, options, new CancellationToken());
+            var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
 
-            StringAssert.EndsWith(result, "test-container/RenamedFile.xml");
+            StringAssert.EndsWith("test-container/RenamedFile.xml", result.Uri);
         }
     }
 }
