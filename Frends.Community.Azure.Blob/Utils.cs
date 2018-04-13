@@ -1,5 +1,8 @@
 ﻿using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage;
+using System.IO;
+
+#pragma warning disable CS1591
 
 namespace Frends.Community.Azure.Blob
 {
@@ -37,6 +40,23 @@ namespace Frends.Community.Azure.Blob
             }
 
             return cloudBlob;
+        }
+
+        public static string GetRenamedFileName(string fileName, string directory)
+        {
+            // if fileName is available, just return that
+            if (!File.Exists(Path.Combine(directory, fileName)))
+                return fileName;
+
+            var index = 1;
+            var name = Path.GetFileNameWithoutExtension(fileName);
+            var extension = Path.GetExtension(fileName);
+            // loop until available indexed filename found
+            while(File.Exists(Path.Combine(directory, $"{name}({index}){extension}")))
+            {
+                index++;
+            }
+            return $"{name}({index}){extension}";
         }
     }
 }
