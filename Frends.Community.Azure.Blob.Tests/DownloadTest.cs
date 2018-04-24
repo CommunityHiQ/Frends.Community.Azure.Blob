@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Frends.Community.Azure.Blob.Tests
 {
     [TestClass]
-    class DownloadTest
+    public class DownloadTest
     {
         /// <summary>
         /// Container name for tests
@@ -52,7 +52,10 @@ namespace Frends.Community.Azure.Blob.Tests
             // setup test material for download tasks
 
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
-            await container.CreateIfNotExistsAsync();
+            var success = await container.CreateIfNotExistsAsync();
+
+            if (!success)
+                throw new Exception("Could no create blob container");
 
             // Retrieve reference to a blob named "myblob".
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(_testBlob);

@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Frends.Community.Azure.Blob.Tests
 {
     [TestClass]
-    class ListTests
+    public class ListTests
     {
         /// <summary>
         /// Container name for tests

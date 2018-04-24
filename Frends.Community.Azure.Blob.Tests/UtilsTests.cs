@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
     [TestClass]
-    class UtilsTests
+    public class UtilsTests
     {
         private string _testDirectory;
         private string _existingFileName;

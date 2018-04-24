@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Frends.Community.Azure.Blob.Tests
 {
     [TestClass]
-    class DeleteTest
+    public class DeleteTest
     {
         /// <summary>
         /// Container name for tests

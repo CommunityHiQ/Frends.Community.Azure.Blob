@@ -62,7 +62,7 @@ namespace Frends.Community.Azure.Blob.Tests
             var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
             var blobResult = Utils.GetCloudBlob(container, "TestFile.xml", AzureBlobType.Block);
 
-            StringAssert.EndsWith("test-container/TestFile.xml", result.Uri);
+            StringAssert.EndsWith(result.Uri, "test-container/TestFile.xml");
             Assert.IsTrue(blobResult.Exists(), "Uploaded TestFile.xml blob should exist");
         }
 
@@ -85,7 +85,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
             var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
 
-            StringAssert.EndsWith("test-container/RenamedFile.xml", result.Uri);
+            StringAssert.EndsWith(result.Uri, "test-container/RenamedFile.xml");
         }
     }
 }
