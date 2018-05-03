@@ -34,6 +34,7 @@ Uploads file to target container. If the container doesn't exist, it will be cre
 | Source File | string | Full path to file that is uploaded. | 'c:\temp\uploadMe.xml' |
 | Connection String | string | Connection string to Azure storage | 'UseDevelopmentStorage=true' |
 | Container Name | string | Name of the azure blob storage container where the data will be uploaded. If the container doesn't exist, then it will be created. See [Naming and Referencing Containers](https://docs.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata) for naming conventions. | 'my-container' |
+| Create container if it does not exist | bool | Tries to create the container if it does not exist. | false |
 | Blob Type | enum: Append, Block or Page  | Azure blob type to upload. | Block |
 | Rename To | string | If value is set, uploaded file will be renamed to this. | 'newFileName.xml' |
 | Overwrite | bool | Should upload operation overwrite existing file with same name. | true |

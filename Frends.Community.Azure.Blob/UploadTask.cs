@@ -37,8 +37,18 @@ namespace Frends.Community.Azure.Blob
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
 
-            // create the container if necessary
-            await container.CreateIfNotExistsAsync(cancellationToken);
+            try
+            {
+                if (destinationProperties.CreateContainerIfItDoesNotExist)
+                {
+                    // create the container if necessary
+                    await container.CreateIfNotExistsAsync(cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Checking if container exists or creating new container caused an exception.", ex);
+            }
 
             // get the destination blob, rename if necessary
             CloudBlob destinationBlob = Utils.GetCloudBlob(container, string.IsNullOrWhiteSpace(destinationProperties.RenameTo) ? fi.Name : destinationProperties.RenameTo, destinationProperties.BlobType);
@@ -98,7 +108,6 @@ namespace Frends.Community.Azure.Blob
 
         /// <summary>
         /// Name of the azure blob storage container where the data will be uploaded.
-        /// If the container doesn't exist, then it will be created.
         /// Naming: lowercase
         /// Valid chars: alphanumeric and dash, but cannot start or end with dash
         /// </summary>
@@ -106,6 +115,12 @@ namespace Frends.Community.Azure.Blob
         [DisplayName("Container Name")]
         [DefaultDisplayType(DisplayType.Text)]
         public string ContainerName { get; set; }
+
+        /// <summary>
+        /// Determines if the container should be created if it does not exist
+        /// </summary>
+        [DisplayName("Create container if it does not exist")]
+        public bool CreateContainerIfItDoesNotExist { get; set; }
 
         /// <summary>
         /// Azure blob type to upload: Append, Block or Page

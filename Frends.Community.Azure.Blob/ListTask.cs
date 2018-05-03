@@ -29,12 +29,12 @@ namespace Frends.Community.Azure.Blob
                 if(blobType == typeof(CloudBlockBlob))
                 {
                     var blockBlob = (CloudBlockBlob)item;
-                    blobs.Add(new BlobData { BlobType = "Block", Uri = blockBlob.Uri.ToString(), Name = blockBlob.Name });
+                    blobs.Add(new BlobData { BlobType = "Block", Uri = blockBlob.Uri.ToString(), Name = blockBlob.Name, ETag = blockBlob.Properties.ETag });
 
                 }else if (blobType == typeof(CloudPageBlob))
                 {
                     var pageBlob = (CloudPageBlob)item;
-                    blobs.Add(new BlobData { BlobType = "Page", Uri = pageBlob.Uri.ToString(), Name = pageBlob.Name });
+                    blobs.Add(new BlobData { BlobType = "Page", Uri = pageBlob.Uri.ToString(), Name = pageBlob.Name, ETag = pageBlob.Properties.ETag});
 
                 }else if(blobType == typeof(CloudBlobDirectory))
                 {
@@ -83,5 +83,6 @@ namespace Frends.Community.Azure.Blob
         public string BlobType { get; set; }
         public string Uri { get; set; }
         public string Name { get; set; }
+        public string ETag { get; set; }
     }
 }
