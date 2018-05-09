@@ -1,4 +1,4 @@
-﻿using Frends.Tasks.Attributes;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
@@ -33,7 +33,6 @@ namespace Frends.Community.Azure.Blob
         /// Reads blob content and returns it. See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="contentProperties"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>Object { string Content }</returns>
         public static async Task<ReadContentOutput> ReadBlobContentAsync(SourceProperties source, CancellationToken cancellationToken)
@@ -115,20 +114,20 @@ namespace Frends.Community.Azure.Blob
         /// Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ConnectionString { get; set; }
 
         /// <summary>
         /// Name of the azure blob storage container where the file is downloaded from.
         /// </summary>
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ContainerName { get; set; }
 
         /// <summary>
         /// Name of the blob to download
         /// </summary>
         [DefaultValue("example.xml")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string BlobName { get; set; }
 
         /// <summary>
@@ -146,7 +145,7 @@ namespace Frends.Community.Azure.Blob
         /// Download destination directory.
         /// </summary>
         [DefaultValue(@"c:\temp")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string Directory { get; set; }
 
         /// <summary>

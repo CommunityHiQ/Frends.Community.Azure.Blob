@@ -1,4 +1,4 @@
-﻿using Frends.Tasks.Attributes;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,6 @@ namespace Frends.Community.Azure.Blob
         /// List blobs in container. See See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="cancellationToken"></param>
         /// <returns>Object { List&lt;Object&gt; { string Name, string Uri, string BlobType }}</returns>
         public static ListBlobsOutput ListBlobs(ListSourceProperties source)
         {
@@ -52,13 +51,13 @@ namespace Frends.Community.Azure.Blob
         /// Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ConnectionString { get; set; }
 
         /// <summary>
         /// Name of the azure blob storage container where the file is downloaded from.
         /// </summary>
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ContainerName { get; set; }
 
         /// <summary>
@@ -70,7 +69,7 @@ namespace Frends.Community.Azure.Blob
         /// <summary>
         /// Blob prefix used while searching container
         /// </summary>
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string Prefix { get; set; }
     }
 

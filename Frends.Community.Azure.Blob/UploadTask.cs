@@ -1,4 +1,4 @@
-﻿using Frends.Tasks.Attributes;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.DataMovement;
 using System;
@@ -103,7 +103,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ConnectionString { get; set; }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DefaultValue("test-container")]
         [DisplayName("Container Name")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ContainerName { get; set; }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DefaultValue("")]
         [DisplayName("Rename source file")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string RenameTo { get; set; }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Frends.Community.Azure.Blob
     {
         [DefaultValue(@"c:\temp\TestFile.xml")]
         [DisplayName("Source File")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string SourceFile { get; set; }
     }
 

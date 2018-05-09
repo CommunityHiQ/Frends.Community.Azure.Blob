@@ -1,4 +1,4 @@
-﻿using Frends.Tasks.Attributes;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
@@ -30,12 +30,6 @@ namespace Frends.Community.Azure.Blob
 
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
-
-            //// if container doesn't exist, exit ok
-            //if (!await container.ExistsAsync())
-            //{
-            //    return new DeleteOutput { Success = true };
-            //}
 
             // get the destination blob, rename if necessary
             CloudBlob blob = Utils.GetCloudBlob(container, target.BlobName, target.BlobType);
@@ -122,7 +116,7 @@ namespace Frends.Community.Azure.Blob
         /// <summary>
         /// Name of the container to delete
         /// </summary>
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ContainerName { get; set; }
     }
 
@@ -133,7 +127,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ConnectionString { get; set; }
     }
 
@@ -144,7 +138,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ConnectionString { get; set; }
 
         /// <summary>
@@ -152,7 +146,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DisplayName("Blob Container Name")]
         [DefaultValue("test-container")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ContainerName { get; set; }
 
     }
@@ -164,7 +158,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DisplayName("Blob name")]
         [DefaultValue("TestFile.xml")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string BlobName { get; set; }
 
         /// <summary>
@@ -172,7 +166,7 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         [DisplayName("Verify ETag When Deleting")]
         [DefaultValue("0x9FE13BAA323E5A4")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string VerifyETagWhenDeleting { get; set; }
 
         /// <summary>
@@ -189,7 +183,5 @@ namespace Frends.Community.Azure.Blob
         [DefaultValue(SnapshotDeleteOption.IncludeSnapshots)]
         public SnapshotDeleteOption SnapshotDeleteOption { get; set; }
 
-    }
-
-
+    }    
 }

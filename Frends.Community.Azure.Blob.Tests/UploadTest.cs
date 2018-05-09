@@ -1,4 +1,5 @@
-﻿using System;
+﻿using TestConfigurationHandler;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Blob;
@@ -17,7 +18,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         /// Connection string for Azure Storage Emulator
         /// </summary>
-        private readonly string _connectionString = "UseDevelopmentStorage=true";
+        private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
 
         /// <summary>
         /// Some random file for test purposes
@@ -55,7 +56,8 @@ namespace Frends.Community.Azure.Blob.Tests
                 BlobType = AzureBlobType.Block,
                 ParallelOperations = 24,
                 ConnectionString = _connectionString,
-                Overwrite = true
+                Overwrite = true,
+                CreateContainerIfItDoesNotExist = true
             };
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
 
@@ -76,11 +78,12 @@ namespace Frends.Community.Azure.Blob.Tests
             var options = new DestinationProperties
             {
                 RenameTo = "RenamedFile.xml",
-                ContainerName = "test-container",
+                ContainerName = _containerName,
                 BlobType = AzureBlobType.Block,
                 ParallelOperations = 24,
-                ConnectionString = "UseDevelopmentStorage=true",
-                Overwrite = true
+                ConnectionString = _connectionString,
+                Overwrite = true,
+                CreateContainerIfItDoesNotExist = true
             };
 
             var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
