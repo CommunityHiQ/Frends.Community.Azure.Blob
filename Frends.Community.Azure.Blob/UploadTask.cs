@@ -63,7 +63,7 @@ namespace Frends.Community.Azure.Blob
             TransferManager.Configurations.ParallelOperations = destinationProperties.ParallelOperations;
 
             // Use UploadOptions to set ContentType of destination CloudBlob
-            Microsoft.WindowsAzure.Storage.DataMovement.UploadOptions uploadOptions = new UploadOptions();
+            UploadOptions uploadOptions = new UploadOptions();
 
             // Setup the transfer context and track the upload progress
             SingleTransferContext transferContext = new SingleTransferContext

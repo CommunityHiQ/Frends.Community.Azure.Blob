@@ -46,12 +46,10 @@ namespace Frends.Community.Azure.Blob
                 if (String.IsNullOrWhiteSpace(target.VerifyETagWhenDeleting))
                 {
                     accessCondition = AccessCondition.GenerateIfMatchCondition(target.VerifyETagWhenDeleting);
-                    //result = await blob.DeleteIfExistsAsync(cancellationToken);
                 }
                 else
                 {
                     accessCondition = AccessCondition.GenerateEmptyCondition();
-                    //result = await blob.DeleteIfExistsAsync(DeleteSnapshotsOption.None, AccessCondition.GenerateIfMatchCondition(target.VerifyETag), new BlobRequestOptions(), new OperationContext(), cancellationToken);
                 }
 
                 bool result = await blob.DeleteIfExistsAsync(target.SnapshotDeleteOption.ConvertEnum<DeleteSnapshotsOption>(), accessCondition, new BlobRequestOptions(), new OperationContext(), cancellationToken);
