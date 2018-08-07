@@ -13,7 +13,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         /// Container name for tests
         /// </summary>
-        private readonly string _containerName = "test-container";
+        private string _containerName;
 
         /// <summary>
         /// Connection string for Azure Storage Emulator
@@ -24,6 +24,13 @@ namespace Frends.Community.Azure.Blob.Tests
         /// Some random file for test purposes
         /// </summary>
         private string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
+
+        [TestInitialize]
+        public void TestSetup()
+        {
+            // Generate unique container name to avoid conflicts when running multiple tests
+            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff")}";
+        }
 
         [TestCleanup]
         public async Task Cleanup()
@@ -64,7 +71,7 @@ namespace Frends.Community.Azure.Blob.Tests
             var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
             var blobResult = Utils.GetCloudBlob(container, "TestFile.xml", AzureBlobType.Block);
 
-            StringAssert.EndsWith(result.Uri, "test-container/TestFile.xml");
+            StringAssert.EndsWith(result.Uri, $"{_containerName}/TestFile.xml");
             Assert.IsTrue(blobResult.Exists(), "Uploaded TestFile.xml blob should exist");
         }
 
@@ -88,7 +95,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
             var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
 
-            StringAssert.EndsWith(result.Uri, "test-container/RenamedFile.xml");
+            StringAssert.EndsWith(result.Uri, $"{_containerName}/RenamedFile.xml");
         }
     }
 }

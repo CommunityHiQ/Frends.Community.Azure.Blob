@@ -14,7 +14,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         /// Container name for tests
         /// </summary>
-        private readonly string _containerName = "test-container";
+        private  string _containerName;
 
         /// <summary>
         /// Connection string for Azure Storage Emulator
@@ -35,7 +35,6 @@ namespace Frends.Community.Azure.Blob.Tests
 
         private SourceProperties _source;
         private DestinationFileProperties _destination;
-        //private BlobContentProperties _content;
         private CancellationToken _cancellationToken;
 
         [TestInitialize]
@@ -43,6 +42,9 @@ namespace Frends.Community.Azure.Blob.Tests
         {
             _destinationDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(_destinationDirectory);
+
+            // Generate unique container name to avoid conflicts when running multiple tests
+            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff")}";
 
             // task properties
             _source = new SourceProperties { ConnectionString = _connectionString, BlobName = _testBlob, BlobType = AzureBlobType.Block, ContainerName = _containerName };
