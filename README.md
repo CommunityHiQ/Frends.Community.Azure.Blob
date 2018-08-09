@@ -54,6 +54,7 @@ List blobs in container.
 | -------- | -------- | -------- | -------- |
 | Connection String | string | Connection string to Azure storage | 'UseDevelopmentStorage=true' |
 | Container Name | string | Name of the azure blob storage container from where the data will be downloaded. | 'my-container' |
+| Flat blob listing | bool | Specifies whether to list blobs in a flat listing, or whether to list blobs hierarchically, by virtual directory. | true |
 | Prefix | string | Blob prefix used while searching container | |
 
 ### Returns
@@ -65,6 +66,7 @@ Result is a list of object with following properties
 | Name | string | Blob Name. With Directories this is empty. | |
 | Uri | string | Blob Uri | |
 | BlobType | string | Type of the blob. Either 'Block','Page' or 'Directory' | 'Block' |
+| ETag | string | Value that is updated everytime blob is updated | 
 
 
 ## DownloadBlobAsync
@@ -118,7 +120,9 @@ Deletes a blob from target container. Operation result is seen as succesful even
 | Connection String | string | Connection string to Azure storage | 'UseDevelopmentStorage=true' |
 | Container Name | string | Name of the container where delete blob exists. | 'my-container' |
 | Blob Name | string | Name of the blob to delete. | 'deleteMe.xml' |
-| Blob Type | enum: Append, Block or Page  | Azure blob type to read. | Block |
+| Verify ETag when deleting | string | Delete blob only if the ETag matches. Leave empty if verification is not needed. Used for concurrency. | 0x9FE13BAA3234312 |
+| Blob Type | enum: Append, Block or Page | Azure blob type to read. | Block |
+| Snapshot delete option | enum:  None, IncludeSnapshots or DeleteSnapshotsOnly | Defines what should be done with blob snapshots | |
 
 ### Returns: 
 
@@ -178,3 +182,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | Version | Changes |
 | ----- | ----- |
 | 1.2.0 | Wrote documentation according to development quide lines. Added DownloadBlobAsync, ReadBlobContentAsync and ListBlobs tasks. |
+| 1.3.0 | New parameters in multiple tasks. New return value in list task. Tasks now use System.ComponentModel.DataAnnotations |
