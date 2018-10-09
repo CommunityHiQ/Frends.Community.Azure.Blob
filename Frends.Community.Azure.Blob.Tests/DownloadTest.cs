@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using TestConfigurationHandler;
+using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.IO;
 using System.Threading;
@@ -8,17 +9,17 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Frends.Community.Azure.Blob.Tests
 {
     [TestClass]
-    class DownloadTest
+    public class DownloadTest
     {
         /// <summary>
         /// Container name for tests
         /// </summary>
-        private readonly string _containerName = "test-container";
+        private  string _containerName;
 
         /// <summary>
         /// Connection string for Azure Storage Emulator
         /// </summary>
-        private readonly string _connectionString = "UseDevelopmentStorage=true";
+        private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
 
         /// <summary>
         /// Some random file for test purposes
@@ -34,7 +35,6 @@ namespace Frends.Community.Azure.Blob.Tests
 
         private SourceProperties _source;
         private DestinationFileProperties _destination;
-        //private BlobContentProperties _content;
         private CancellationToken _cancellationToken;
 
         [TestInitialize]
@@ -42,6 +42,9 @@ namespace Frends.Community.Azure.Blob.Tests
         {
             _destinationDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(_destinationDirectory);
+
+            // Generate unique container name to avoid conflicts when running multiple tests
+            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff")}";
 
             // task properties
             _source = new SourceProperties { ConnectionString = _connectionString, BlobName = _testBlob, BlobType = AzureBlobType.Block, ContainerName = _containerName };
@@ -52,7 +55,10 @@ namespace Frends.Community.Azure.Blob.Tests
             // setup test material for download tasks
 
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
-            await container.CreateIfNotExistsAsync();
+            var success = await container.CreateIfNotExistsAsync();
+
+            if (!success)
+                throw new Exception("Could no create blob container");
 
             // Retrieve reference to a blob named "myblob".
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(_testBlob);

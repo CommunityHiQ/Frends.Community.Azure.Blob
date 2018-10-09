@@ -1,4 +1,4 @@
-﻿using Frends.Tasks.Attributes;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,6 @@ namespace Frends.Community.Azure.Blob
         /// List blobs in container. See See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="cancellationToken"></param>
         /// <returns>Object { List&lt;Object&gt; { string Name, string Uri, string BlobType }}</returns>
         public static ListBlobsOutput ListBlobs(ListSourceProperties source)
         {
@@ -29,12 +28,12 @@ namespace Frends.Community.Azure.Blob
                 if(blobType == typeof(CloudBlockBlob))
                 {
                     var blockBlob = (CloudBlockBlob)item;
-                    blobs.Add(new BlobData { BlobType = "Block", Uri = blockBlob.Uri.ToString(), Name = blockBlob.Name });
+                    blobs.Add(new BlobData { BlobType = "Block", Uri = blockBlob.Uri.ToString(), Name = blockBlob.Name, ETag = blockBlob.Properties.ETag });
 
                 }else if (blobType == typeof(CloudPageBlob))
                 {
                     var pageBlob = (CloudPageBlob)item;
-                    blobs.Add(new BlobData { BlobType = "Page", Uri = pageBlob.Uri.ToString(), Name = pageBlob.Name });
+                    blobs.Add(new BlobData { BlobType = "Page", Uri = pageBlob.Uri.ToString(), Name = pageBlob.Name, ETag = pageBlob.Properties.ETag});
 
                 }else if(blobType == typeof(CloudBlobDirectory))
                 {
@@ -52,13 +51,13 @@ namespace Frends.Community.Azure.Blob
         /// Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ConnectionString { get; set; }
 
         /// <summary>
         /// Name of the azure blob storage container where the file is downloaded from.
         /// </summary>
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string ContainerName { get; set; }
 
         /// <summary>
@@ -70,7 +69,7 @@ namespace Frends.Community.Azure.Blob
         /// <summary>
         /// Blob prefix used while searching container
         /// </summary>
-        [DefaultDisplayType(DisplayType.Text)]
+        [DisplayFormat(DataFormatString = "Text")]
         public string Prefix { get; set; }
     }
 
@@ -83,5 +82,6 @@ namespace Frends.Community.Azure.Blob
         public string BlobType { get; set; }
         public string Uri { get; set; }
         public string Name { get; set; }
+        public string ETag { get; set; }
     }
 }

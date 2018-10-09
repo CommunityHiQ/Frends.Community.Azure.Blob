@@ -1,4 +1,5 @@
 ﻿using Microsoft.WindowsAzure.Storage.Blob;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -75,6 +76,11 @@ namespace Frends.Community.Azure.Blob
         public static bool IsGZipped(this CloudBlob cloudBlob)
         {
             return cloudBlob.Properties != null && cloudBlob.Properties.ContentEncoding != null && cloudBlob.Properties.ContentEncoding.Equals("gzip", System.StringComparison.InvariantCultureIgnoreCase);
+        }
+        
+        public static TEnum ConvertEnum<TEnum>(this Enum source)
+        {
+            return (TEnum)Enum.Parse(typeof(TEnum), source.ToString(), true);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using TestConfigurationHandler;
+using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,17 +10,17 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Frends.Community.Azure.Blob.Tests
 {
     [TestClass]
-    class ListTests
+    public class ListTests
     {
         /// <summary>
         /// Container name for tests
         /// </summary>
-        private readonly string _containerName = "test-container";
-
+        private string _containerName;
+        
         /// <summary>
         /// Connection string for Azure Storage Emulator
         /// </summary>
-        private readonly string _connectionString = "UseDevelopmentStorage=true";
+        private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
 
         /// <summary>
         /// Test blob name
@@ -36,6 +37,9 @@ namespace Frends.Community.Azure.Blob.Tests
         [TestInitialize]
         public async Task TestSetup()
         {
+            // Generate unique container name to avoid conflicts when running multiple tests
+            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff")}";
+
             _sourceProperties = new ListSourceProperties { ConnectionString = _connectionString, ContainerName = _containerName, FlatBlobListing = false };
 
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
@@ -46,8 +50,6 @@ namespace Frends.Community.Azure.Blob.Tests
             await blockBlob.UploadFromFileAsync(_testFilePath);
             var blobWithDir = container.GetBlockBlobReference("directory/test-blob2.txt");
             await blobWithDir.UploadFromFileAsync(_testFilePath);
-
-
         }
 
         [TestCleanup]

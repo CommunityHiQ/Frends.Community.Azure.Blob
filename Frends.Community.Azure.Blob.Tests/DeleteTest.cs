@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using TestConfigurationHandler;
+using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Frends.Community.Azure.Blob.Tests
 {
     [TestClass]
-    class DeleteTest
+    public class DeleteTest
     {
         /// <summary>
         /// Container name for tests
@@ -17,7 +18,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         /// Connection string for Azure Storage Emulator
         /// </summary>
-        private readonly string _connectionString = "UseDevelopmentStorage=true";
+        private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
 
         /// <summary>
         /// Some random file for test purposes

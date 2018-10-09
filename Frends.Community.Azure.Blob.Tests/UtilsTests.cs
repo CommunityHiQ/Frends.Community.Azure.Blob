@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
     [TestClass]
-    class UtilsTests
+    public class UtilsTests
     {
         private string _testDirectory;
         private string _existingFileName;
@@ -15,7 +14,7 @@ namespace Frends.Community.Azure.Blob.Tests
         public void TestSetup()
         {
             _existingFileName = "existing_file.txt";
-            // crete test folder 
+            // create test folder 
             _testDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(_testDirectory);
 
