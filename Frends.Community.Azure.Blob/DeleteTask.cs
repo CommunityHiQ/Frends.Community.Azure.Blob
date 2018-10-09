@@ -43,7 +43,7 @@ namespace Frends.Community.Azure.Blob
             {
                 AccessCondition accessCondition;                
 
-                if (String.IsNullOrWhiteSpace(target.VerifyETagWhenDeleting))
+                if (string.IsNullOrWhiteSpace(target.VerifyETagWhenDeleting))
                 {
                     accessCondition = AccessCondition.GenerateIfMatchCondition(target.VerifyETagWhenDeleting);
                 }
@@ -66,18 +66,18 @@ namespace Frends.Community.Azure.Blob
         /// Deletes a whole container from Azure blob storage. See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
         /// </summary>
         /// <param name="target"></param>
-        /// <param name="ConnectionProperties"></param>
+        /// <param name="connectionProperties"></param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Object { bool Success }</returns>
-        public static async Task<DeleteOutput> DeleteContainerAsync(DeleteContainerProperties target, ContainerConnectionProperties ConnectionProperties, CancellationToken cancellationToken)
+        public static async Task<DeleteOutput> DeleteContainerAsync(DeleteContainerProperties target, ContainerConnectionProperties connectionProperties, CancellationToken cancellationToken)
         {
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
 
             // get container
-            CloudBlobContainer container = Utils.GetBlobContainer(ConnectionProperties.ConnectionString, target.ContainerName);
+            CloudBlobContainer container = Utils.GetBlobContainer(connectionProperties.ConnectionString, target.ContainerName);
 
-            if(!await container.ExistsAsync())
+            if(!await container.ExistsAsync(cancellationToken))
             {
                 return new DeleteOutput { Success = true };
             }

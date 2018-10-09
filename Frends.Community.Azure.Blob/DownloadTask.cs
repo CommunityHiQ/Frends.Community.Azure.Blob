@@ -62,14 +62,14 @@ namespace Frends.Community.Azure.Blob
                 case SourceBlobOperation.Read:
                     return new DownloadOutputBase { Content = content };
                 case SourceBlobOperation.Download:
-                    return WriteToFile(content, sourceProperties.BlobName, encoding, destinationProperties, cancellationToken);
+                    return WriteToFile(content, sourceProperties.BlobName, encoding, destinationProperties);
                 default:
                     throw new System.Exception("Unknown operations. Allowed operations are Read and Download");
             }
         }
         
 
-        private static DownloadOutputBase WriteToFile(string content, string fileName, Encoding encoding, DestinationFileProperties destinationProperties, CancellationToken cancellationToken)
+        private static DownloadOutputBase WriteToFile(string content, string fileName, Encoding encoding, DestinationFileProperties destinationProperties)
         {
             var destinationFileName = fileName;
             if (File.Exists(Path.Combine(destinationProperties.Directory, destinationFileName)))
