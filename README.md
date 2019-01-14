@@ -183,3 +183,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | ----- | ----- |
 | 1.2.0 | Wrote documentation according to development quide lines. Added DownloadBlobAsync, ReadBlobContentAsync and ListBlobs tasks. |
 | 1.3.0 | New parameters in multiple tasks. New return value in list task. Tasks now use System.ComponentModel.DataAnnotations |
+| 1.4.0 | Updated dependencies due potential security vulnerabilities. |
