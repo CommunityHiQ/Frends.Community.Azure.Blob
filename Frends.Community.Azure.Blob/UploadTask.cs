@@ -2,11 +2,16 @@
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.DataMovement;
 using System;
+using System.CodeDom;
 using System.ComponentModel;
 using System.IO;
+using System.IO.Compression;
+using System.Net.Mime;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Microsoft.WindowsAzure.Storage;
 
 #pragma warning disable CS1591 
 
@@ -51,7 +56,15 @@ namespace Frends.Community.Azure.Blob
             }
 
             // get the destination blob, rename if necessary
-            CloudBlob destinationBlob = Utils.GetCloudBlob(container, string.IsNullOrWhiteSpace(destinationProperties.RenameTo) ? fi.Name : destinationProperties.RenameTo, destinationProperties.BlobType);
+            CloudBlob destinationBlob = Utils.GetCloudBlob(container, 
+                string.IsNullOrWhiteSpace(destinationProperties.RenameTo) ? fi.Name : destinationProperties.RenameTo, 
+                destinationProperties.BlobType);
+
+            var contentType = string.IsNullOrWhiteSpace(destinationProperties.ContentType) ? 
+                    MimeMapping.GetMimeMapping(fi.Name) :
+                    destinationProperties.ContentType;
+            
+            var encoding = destinationProperties.FileEncoding.ConvertToEncoding();
 
             // delete blob if user requested overwrite
             if (destinationProperties.Overwrite)
@@ -65,26 +78,49 @@ namespace Frends.Community.Azure.Blob
             // Use UploadOptions to set ContentType of destination CloudBlob
             UploadOptions uploadOptions = new UploadOptions();
 
+            var progressHandler = new Progress<TransferStatus>(progress =>
+            {
+                Console.WriteLine("Bytes uploaded: {0}", progress.BytesTransferred);
+            });
+
             // Setup the transfer context and track the upload progress
             SingleTransferContext transferContext = new SingleTransferContext
             {
                 SetAttributesCallback = (destination) =>
                 {
                     CloudBlob cloudBlob = destination as CloudBlob;
-                    cloudBlob.Properties.ContentType = MimeMapping.GetMimeMapping(fi.Name);
-                }
-            };
+                    cloudBlob.Properties.ContentType = contentType;
+                    cloudBlob.Properties.ContentEncoding = input.Compress ? "gzip" : encoding.WebName;
+                },
 
+                ProgressHandler = progressHandler
+            };
+            
             // begin and await for upload to complete
             try
             {
-                await TransferManager.UploadAsync(input.SourceFile, destinationBlob, uploadOptions, transferContext, cancellationToken);
+                /* This works as well.
+                var blob = destinationBlob;
+                blob.Properties.ContentType = contentType;
+                var text = File.ReadAllText(fi.FullName);
+                var content = input.Compress ? Utils.Compress(text) : text;
+                blob.UploadText(
+                    content,
+                    Encoding.UTF8);
+                */
+
+                using (var stream = Utils.GetStream(input.Compress, input.ContentsOnly, encoding, fi))
+                {
+                    await TransferManager.UploadAsync(stream,
+                        destinationBlob, uploadOptions, transferContext,
+                        cancellationToken);
+                }
             }
             catch (Exception e)
             {
                 throw new Exception("UploadFileAsync: Error occured while uploading file to blob storage", e);
             }
-
+            
             // return uri to uploaded blob and source file path
             return new UploadOutput { SourceFile = input.SourceFile, Uri = destinationBlob.Uri.ToString() };
         }
@@ -138,12 +174,27 @@ namespace Frends.Community.Azure.Blob
         public string RenameTo { get; set; }
 
         /// <summary>
+        /// Set desired content-type. If empty, task tries to guess from mime-type.
+        /// </summary>
+        [DefaultValue("")]
+        [DisplayName("Force Content-Type")]
+        [DisplayFormat(DataFormatString = "Text")]
+        public string ContentType { get; set; }
+
+        /// <summary>
+        /// Set desired content-encoding. Defaults to UTF8 BOM.
+        /// </summary>
+        [DefaultValue("")]
+        [DisplayName("Force Content-Encoding")]
+        [DisplayFormat(DataFormatString = "Text")]
+        public string FileEncoding { get; set; }
+
+        /// <summary>
         /// Should upload operation overwrite existing file with same name?
         /// </summary>
         [DefaultValue(true)]
         [DisplayName("Overwrite existing file")]
         public bool Overwrite { get; set; }
-
 
         /// <summary>
         /// How many work items to process concurrently.
@@ -159,6 +210,20 @@ namespace Frends.Community.Azure.Blob
         [DisplayName("Source File")]
         [DisplayFormat(DataFormatString = "Text")]
         public string SourceFile { get; set; }
+
+        /// <summary>
+        /// Uses stream to read file content.
+        /// </summary>
+        [DefaultValue(false)]
+        [DisplayName("Stream content only")]
+        public bool ContentsOnly { get; set; }
+
+        /// <summary>
+        /// Works only when transferring stream content.
+        /// </summary>
+        [DefaultValue(false)]
+        [DisplayName("Gzip compression")]
+        public bool Compress { get; set; }
     }
 
     public enum AzureBlobType

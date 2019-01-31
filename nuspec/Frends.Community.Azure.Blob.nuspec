@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Frends.Community.Azure.Blob</id>
-    <version>1.4.0</version>
+    <version>1.4.5</version>
     <title>Frends.Community.Azure.Blob</title>
     <authors>HiQ Finland</authors>
     <owners>HiQ Finland</owners>
@@ -16,12 +16,12 @@
         <dependency id="Microsoft.Azure.KeyVault.Core" version="2.0.4" />
         <dependency id="Microsoft.Azure.Storage.DataMovement" version="0.7.1" />
         <dependency id="Microsoft.Data.Edm" version="5.8.3" />
-        <dependency id="Microsoft.Data.OData" version="5.8.4" />
+        <dependency id="Microsoft.Data.OData" version="5.8.3" />
         <dependency id="Microsoft.Data.Services.Client" version="5.8.3" />
         <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="3.2.3" />
         <dependency id="Newtonsoft.Json" version="10.0.2" />
         <dependency id="System.Spatial" version="5.8.3" />
-        <dependency id="WindowsAzure.Storage" version="9.1.1" />
+        <dependency id="WindowsAzure.Storage" version="9.3.3" />
       </group>
     </dependencies>
     <frameworkAssemblies>
