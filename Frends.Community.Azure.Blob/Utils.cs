@@ -74,15 +74,25 @@ namespace Frends.Community.Azure.Blob
         public static Stream GetStream(bool compress, bool fromString, Encoding encoding, FileInfo file)
         {
             byte[] compressed;
-            using (var fileStream = File.OpenRead(file.FullName))
+            var fileStream = File.OpenRead(file.FullName);
             {
-                if (!compress && !fromString) return fileStream; // as uncompressed binary
+
+                if (!compress && !fromString)
+                    return fileStream; // as uncompressed binary
 
                 if (!compress)
-                    return new MemoryStream(
-                        encoding.GetBytes(
-                            new StreamReader(fileStream, encoding)
-                                .ReadToEnd())); // as uncompressed string
+                {
+                    byte[] bytes;
+                    using (var reader = new StreamReader(fileStream, encoding))
+                    {
+                        
+                        bytes = encoding.GetBytes(reader.ReadToEnd());
+                        
+                    }
+
+                    fileStream.Dispose();
+                    return new MemoryStream(bytes); // as uncompressed string
+                }
 
                 using (var outStream = new MemoryStream())
                 {
@@ -105,6 +115,7 @@ namespace Frends.Community.Azure.Blob
                     compressed = outStream.ToArray();
                 }
             }
+            fileStream.Dispose();
 
             var memStream = new MemoryStream(compressed);
             return memStream;

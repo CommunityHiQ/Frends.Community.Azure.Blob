@@ -89,6 +89,7 @@ namespace Frends.Community.Azure.Blob
                 SetAttributesCallback = (destination) =>
                 {
                     CloudBlob cloudBlob = destination as CloudBlob;
+                    if (cloudBlob == null) throw new ArgumentNullException();
                     cloudBlob.Properties.ContentType = contentType;
                     cloudBlob.Properties.ContentEncoding = input.Compress ? "gzip" : encoding.WebName;
                 },
@@ -99,19 +100,10 @@ namespace Frends.Community.Azure.Blob
             // begin and await for upload to complete
             try
             {
-                /* This works as well.
-                var blob = destinationBlob;
-                blob.Properties.ContentType = contentType;
-                var text = File.ReadAllText(fi.FullName);
-                var content = input.Compress ? Utils.Compress(text) : text;
-                blob.UploadText(
-                    content,
-                    Encoding.UTF8);
-                */
-
                 using (var stream = Utils.GetStream(input.Compress, input.ContentsOnly, encoding, fi))
                 {
-                    await TransferManager.UploadAsync(stream,
+                    await TransferManager.UploadAsync(
+                        stream,
                         destinationBlob, uploadOptions, transferContext,
                         cancellationToken);
                 }
