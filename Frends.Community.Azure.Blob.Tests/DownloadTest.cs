@@ -1,10 +1,10 @@
-﻿using TestConfigurationHandler;
-using Microsoft.WindowsAzure.Storage.Blob;
-using System;
+﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestConfigurationHandler;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
@@ -12,30 +12,32 @@ namespace Frends.Community.Azure.Blob.Tests
     public class DownloadTest
     {
         /// <summary>
-        /// Container name for tests
-        /// </summary>
-        private  string _containerName;
-
-        /// <summary>
-        /// Connection string for Azure Storage Emulator
+        ///     Connection string for Azure Storage Emulator
         /// </summary>
         private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
 
         /// <summary>
-        /// Some random file for test purposes
+        ///     Some random file for test purposes
         /// </summary>
         private readonly string _testBlob = "test-blob.txt";
 
+        private CancellationToken _cancellationToken;
+
         /// <summary>
-        /// Some random file for test purposes
+        ///     Container name for tests
         /// </summary>
-        private string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
+        private string _containerName;
+
+        private DestinationFileProperties _destination;
 
         private string _destinationDirectory;
 
         private SourceProperties _source;
-        private DestinationFileProperties _destination;
-        private CancellationToken _cancellationToken;
+
+        /// <summary>
+        ///     Some random file for test purposes
+        /// </summary>
+        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
 
         [TestInitialize]
         public async Task TestSetup()
@@ -44,34 +46,44 @@ namespace Frends.Community.Azure.Blob.Tests
             Directory.CreateDirectory(_destinationDirectory);
 
             // Generate unique container name to avoid conflicts when running multiple tests
-            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff")}";
+            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff", CultureInfo.InvariantCulture)}";
 
             // task properties
-            _source = new SourceProperties { ConnectionString = _connectionString, BlobName = _testBlob, BlobType = AzureBlobType.Block, ContainerName = _containerName };
-            _destination = new DestinationFileProperties { Directory = _destinationDirectory, FileExistsOperation = FileExistsAction.Overwrite };
+            _source = new SourceProperties
+            {
+                ConnectionString = _connectionString,
+                BlobName = _testBlob,
+                BlobType = AzureBlobType.Block,
+                ContainerName = _containerName
+            };
+            _destination = new DestinationFileProperties
+            {
+                Directory = _destinationDirectory,
+                FileExistsOperation = FileExistsAction.Overwrite
+            };
             _cancellationToken = new CancellationToken();
 
 
             // setup test material for download tasks
 
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
-            var success = await container.CreateIfNotExistsAsync();
+            var success = await container.CreateIfNotExistsAsync(_cancellationToken);
 
             if (!success)
                 throw new Exception("Could no create blob container");
 
             // Retrieve reference to a blob named "myblob".
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference(_testBlob);
+            var blockBlob = container.GetBlockBlobReference(_testBlob);
 
-            await blockBlob.UploadFromFileAsync(_testFilePath);
+            await blockBlob.UploadFromFileAsync(_testFilePath, _cancellationToken);
         }
 
         [TestCleanup]
         public async Task Cleanup()
         {
             // delete whole container after running tests
-            CloudBlobContainer container = Utils.GetBlobContainer(_connectionString, _containerName);
-            await container.DeleteIfExistsAsync();
+            var container = Utils.GetBlobContainer(_connectionString, _containerName);
+            await container.DeleteIfExistsAsync(_cancellationToken);
 
             // delete test files and folders
             if (Directory.Exists(_destinationDirectory))
@@ -103,7 +115,7 @@ namespace Frends.Community.Azure.Blob.Tests
             await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
             _destination.FileExistsOperation = FileExistsAction.Error;
 
-            var result = await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
+            await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
         }
 
         [TestMethod]

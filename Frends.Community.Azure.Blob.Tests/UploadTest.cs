@@ -1,12 +1,10 @@
-﻿using TestConfigurationHandler;
-using System;
+﻿using System;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.IO;
-using System.Linq.Expressions;
-using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
+using TestConfigurationHandler;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
@@ -14,40 +12,41 @@ namespace Frends.Community.Azure.Blob.Tests
     public class UploadTest
     {
         /// <summary>
-        /// Container name for tests
-        /// </summary>
-        private string _containerName;
-
-        /// <summary>
-        /// Connection string for Azure Storage Emulator
+        ///     Connection string for Azure Storage Emulator
         /// </summary>
         private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
 
         /// <summary>
-        /// Some random file for test purposes
+        ///     Container name for tests
         /// </summary>
-        private string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
-        
+        private string _containerName;
+
+        /// <summary>
+        ///     Some random file for test purposes
+        /// </summary>
+        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
+
         [TestInitialize]
         public void TestSetup()
         {
             // Generate unique container name to avoid conflicts when running multiple tests
-            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff")}";
+            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff", CultureInfo.InvariantCulture)}";
         }
 
         [TestCleanup]
         public async Task Cleanup()
         {
             // delete whole container after running tests
-            CloudBlobContainer container = Utils.GetBlobContainer(_connectionString, _containerName);
+            var container = Utils.GetBlobContainer(_connectionString, _containerName);
             await container.DeleteIfExistsAsync();
         }
+
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
         public async Task UploadFileAsync_ShouldThrowArgumentExceptionIfFileWasNotFound()
         {
-            var result = await UploadTask.UploadFileAsync(
-                new UploadInput { SourceFile = "NonExistingFile" },
+            await UploadTask.UploadFileAsync(
+                new UploadInput {SourceFile = "NonExistingFile"},
                 new DestinationProperties(),
                 new CancellationToken());
         }
@@ -99,7 +98,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
             StringAssert.EndsWith(result.Uri, $"{_containerName}/RenamedFile.xml");
         }
-        
+
         [TestMethod]
         public async Task UploadFileAsync_ShouldUploadCompressedFile()
         {
@@ -161,7 +160,7 @@ namespace Frends.Community.Azure.Blob.Tests
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
 
             await UploadTask.UploadFileAsync(input, options, new CancellationToken());
-            var blobResult = (CloudBlockBlob)Utils.GetCloudBlob(container, renameTo, AzureBlobType.Block);
+            var blobResult = (CloudBlockBlob) Utils.GetCloudBlob(container, renameTo, AzureBlobType.Block);
             await blobResult.FetchAttributesAsync();
 
             Assert.IsTrue(blobResult.Properties.ContentType == "foo/bar");
@@ -195,7 +194,7 @@ namespace Frends.Community.Azure.Blob.Tests
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
 
             await UploadTask.UploadFileAsync(input, options, new CancellationToken());
-            var blobResult = (CloudBlockBlob)Utils.GetCloudBlob(container, renameTo, AzureBlobType.Block);
+            var blobResult = (CloudBlockBlob) Utils.GetCloudBlob(container, renameTo, AzureBlobType.Block);
             await blobResult.FetchAttributesAsync();
 
             Assert.IsTrue(blobResult.Properties.ContentEncoding == "gzip");

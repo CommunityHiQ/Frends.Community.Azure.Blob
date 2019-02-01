@@ -1,8 +1,8 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
 using System.Text;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 #pragma warning disable CS1591
 
@@ -13,35 +13,27 @@ namespace Frends.Community.Azure.Blob
         public static CloudBlobContainer GetBlobContainer(string connectionString, string containerName)
         {
             // initialize azure account
-            CloudStorageAccount account = CloudStorageAccount.Parse(connectionString);
+            var account = CloudStorageAccount.Parse(connectionString);
 
             // initialize blob client
-            CloudBlobClient client = account.CreateCloudBlobClient();
+            var client = account.CreateCloudBlobClient();
 
             return client.GetContainerReference(containerName);
         }
 
         public static CloudBlob GetCloudBlob(CloudBlobContainer container, string blobName, AzureBlobType blobType)
         {
-            CloudBlob cloudBlob;
-
             switch (blobType)
             {
                 case AzureBlobType.Append:
-                    cloudBlob = container.GetAppendBlobReference(blobName);
-                    break;
+                    return container.GetAppendBlobReference(blobName);
                 case AzureBlobType.Block:
-                    cloudBlob = container.GetBlockBlobReference(blobName);
-                    break;
+                    return container.GetBlockBlobReference(blobName);
                 case AzureBlobType.Page:
-                    cloudBlob = container.GetPageBlobReference(blobName);
-                    break;
+                    return container.GetPageBlobReference(blobName);
                 default:
-                    cloudBlob = container.GetBlockBlobReference(blobName);
-                    break;
+                    return container.GetBlockBlobReference(blobName);
             }
-
-            return cloudBlob;
         }
 
         public static string GetRenamedFileName(string fileName, string directory)
@@ -54,16 +46,13 @@ namespace Frends.Community.Azure.Blob
             var name = Path.GetFileNameWithoutExtension(fileName);
             var extension = Path.GetExtension(fileName);
             // loop until available indexed filename found
-            while (File.Exists(Path.Combine(directory, $"{name}({index}){extension}")))
-            {
-                index++;
-            }
+            while (File.Exists(Path.Combine(directory, $"{name}({index}){extension}"))) index++;
 
             return $"{name}({index}){extension}";
         }
 
         /// <summary>
-        /// Gets correct stream object. Does not dispose, so use using.
+        ///     Gets correct stream object. Does not always dispose, so use using.
         /// </summary>
         /// <param name="compress"></param>
         /// <param name="file"></param>
@@ -73,10 +62,10 @@ namespace Frends.Community.Azure.Blob
         public static Stream GetStream(bool compress, bool fromString, Encoding encoding, FileInfo file)
         {
             var fileStream = File.OpenRead(file.FullName);
-            
+
             if (!compress && !fromString)
                 return fileStream; // as uncompressed binary
-            
+
             byte[] bytes;
             if (!compress)
             {
@@ -92,11 +81,8 @@ namespace Frends.Community.Azure.Blob
                 using (var gzip = new GZipStream(outStream, CompressionMode.Compress))
                 {
                     if (!fromString)
-                    {
                         fileStream.CopyTo(gzip); // as compressed binary
-                    }
                     else
-                    {
                         using (var reader = new StreamReader(fileStream, encoding))
                         {
                             var content = reader.ReadToEnd();
@@ -105,12 +91,9 @@ namespace Frends.Community.Azure.Blob
                                 encodedMemory.CopyTo(gzip); // as compressed string
                             }
                         }
-                    }
                 }
-
                 bytes = outStream.ToArray();
             }
-            
             fileStream.Dispose();
 
             var memStream = new MemoryStream(bytes);

@@ -8,10 +8,10 @@ namespace Frends.Community.Azure.Blob.Tests
     [TestClass]
     public class UtilsTests
     {
-        private string _testDirectory;
         private string _existingFileName;
-        private string _testPath;
         private FileInfo _file;
+        private string _testDirectory;
+        private string _testPath;
 
         [TestInitialize]
         public void TestSetup()
@@ -23,8 +23,8 @@ namespace Frends.Community.Azure.Blob.Tests
             _testPath = Path.Combine(_testDirectory, _existingFileName);
             File.WriteAllText(_testPath, "I'm walking here! I'm walking here!");
             _file = new FileInfo(_testPath);
-            
-             if (!_file.Exists) throw new Exception("File Be Not Present.");
+
+            if (!_file.Exists) throw new Exception("File Be Not Present.");
         }
 
         [TestCleanup]
@@ -69,7 +69,7 @@ namespace Frends.Community.Azure.Blob.Tests
         }
 
         [TestMethod]
-        public void GetStream_ReturnsReadableAndWriteableStream()
+        public void GetStream_ReturnsReadableStream()
         {
             // UploadAsync needs readable stream.
             using (var stream = Utils.GetStream(false, false, Encoding.UTF8, _file))
@@ -81,49 +81,57 @@ namespace Frends.Community.Azure.Blob.Tests
             {
                 Assert.IsTrue(stream.CanRead);
             }
-            
+
             using (var stream = Utils.GetStream(true, false, Encoding.UTF8, _file))
             {
                 Assert.IsTrue(stream.CanRead);
             }
-            
+
             using (var stream = Utils.GetStream(true, true, Encoding.UTF8, _file))
             {
                 Assert.IsTrue(stream.CanRead);
             }
-            
-            using(var file = _file.Open(FileMode.Open, FileAccess.Read))
+
+            using (var file = _file.Open(FileMode.Open, FileAccess.Read))
+            {
                 Assert.IsTrue(file.CanRead); // == streams dispose and file is closed properly.
+            }
         }
 
         [TestMethod]
         public void GetStream_ReturnsFileUncompressed()
         {
-            using(var stream = Utils.GetStream(false, true, Encoding.UTF8, _file))
+            using (var stream = Utils.GetStream(false, true, Encoding.UTF8, _file))
+            {
                 Assert.AreEqual(
                     stream.Length,
                     Encoding.UTF8.GetBytes(File.ReadAllText(_file.FullName)).Length
-                    );
+                );
+            }
         }
 
         [TestMethod]
         public void GetStream_ReturnsFileCompressed()
         {
-            using(var stream = Utils.GetStream(true, false, Encoding.UTF8, _file))
+            using (var stream = Utils.GetStream(true, false, Encoding.UTF8, _file))
+            {
                 Assert.AreNotEqual(
                     stream.Length,
                     Encoding.UTF8.GetBytes(File.ReadAllText(_file.FullName)).Length
                 );
+            }
         }
 
         [TestMethod]
         public void GetStream_ReturnsCompressedMemoryStream()
         {
             using (var stream = Utils.GetStream(true, false, Encoding.UTF8, _file))
+            {
                 Assert.IsTrue(
                     stream.Length != Encoding.UTF8.GetBytes(File.ReadAllText(_file.FullName)).Length &&
                     stream is MemoryStream
-                    );
+                );
+            }
         }
     }
 }

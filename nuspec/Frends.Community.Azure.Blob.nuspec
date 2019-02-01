@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+
 <package>
   <metadata>
     <id>Frends.Community.Azure.Blob</id>
@@ -27,15 +28,17 @@
     <frameworkAssemblies>
       <frameworkAssembly assemblyName="System" targetFramework="net452" />
       <frameworkAssembly assemblyName="System.ComponentModel" targetFramework="net452" />
-      <frameworkAssembly assemblyName="System.IO" targetFramework="net452"/>
+      <frameworkAssembly assemblyName="System.IO" targetFramework="net452" />
       <frameworkAssembly assemblyName="System.Threading" targetFramework="net452" />
       <frameworkAssembly assemblyName="System.Threading.Tasks" targetFramework="net452" />
       <frameworkAssembly assemblyName="System.Web" targetFramework="net452" />
     </frameworkAssemblies>
   </metadata>
   <files>
-	  <file src="..\Frends.Community.Azure.Blob\bin\Release\Frends.Community.Azure.Blob.dll" target="lib\net452\Frends.Community.Azure.Blob.dll" />
-    <file src="..\Frends.Community.Azure.Blob\bin\Release\Frends.Community.Azure.Blob.xml" target="lib\net452\Frends.Community.Azure.Blob.xml" />
+    <file src="..\Frends.Community.Azure.Blob\bin\Release\Frends.Community.Azure.Blob.dll"
+          target="lib\net452\Frends.Community.Azure.Blob.dll" />
+    <file src="..\Frends.Community.Azure.Blob\bin\Release\Frends.Community.Azure.Blob.xml"
+          target="lib\net452\Frends.Community.Azure.Blob.xml" />
     <file src="..\Frends.Community.Azure.Blob\FrendsTaskMetadata.json" target="FrendsTaskMetadata.json" />
   </files>
 </package>
