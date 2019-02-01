@@ -1,11 +1,8 @@
-﻿using System;
-using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage;
 using System.IO;
 using System.IO.Compression;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 
 #pragma warning disable CS1591
 
@@ -70,54 +67,53 @@ namespace Frends.Community.Azure.Blob
         /// </summary>
         /// <param name="compress"></param>
         /// <param name="file"></param>
+        /// <param name="fromString"></param>
+        /// <param name="encoding"></param>
         /// <returns></returns>
         public static Stream GetStream(bool compress, bool fromString, Encoding encoding, FileInfo file)
         {
-            byte[] compressed;
             var fileStream = File.OpenRead(file.FullName);
+            
+            if (!compress && !fromString)
+                return fileStream; // as uncompressed binary
+            
+            byte[] bytes;
+            if (!compress)
             {
-
-                if (!compress && !fromString)
-                    return fileStream; // as uncompressed binary
-
-                if (!compress)
+                using (var reader = new StreamReader(fileStream, encoding))
                 {
-                    byte[] bytes;
-                    using (var reader = new StreamReader(fileStream, encoding))
-                    {
-                        
-                        bytes = encoding.GetBytes(reader.ReadToEnd());
-                        
-                    }
-
-                    fileStream.Dispose();
-                    return new MemoryStream(bytes); // as uncompressed string
+                    bytes = encoding.GetBytes(reader.ReadToEnd());
                 }
+                return new MemoryStream(bytes); // as uncompressed string
+            }
 
-                using (var outStream = new MemoryStream())
+            using (var outStream = new MemoryStream())
+            {
+                using (var gzip = new GZipStream(outStream, CompressionMode.Compress))
                 {
-                    using (var gzip = new GZipStream(outStream, CompressionMode.Compress))
+                    if (!fromString)
                     {
-                        if (fromString)
+                        fileStream.CopyTo(gzip); // as compressed binary
+                    }
+                    else
+                    {
+                        using (var reader = new StreamReader(fileStream, encoding))
                         {
-                            using (var encodedMemory = new MemoryStream(
-                                encoding.GetBytes(new StreamReader(fileStream, encoding).ReadToEnd())))
+                            var content = reader.ReadToEnd();
+                            using (var encodedMemory = new MemoryStream(encoding.GetBytes(content)))
                             {
                                 encodedMemory.CopyTo(gzip); // as compressed string
                             }
                         }
-                        else
-                        {
-                            fileStream.CopyTo(gzip); // as compressed binary
-                        }
                     }
-
-                    compressed = outStream.ToArray();
                 }
+
+                bytes = outStream.ToArray();
             }
+            
             fileStream.Dispose();
 
-            var memStream = new MemoryStream(compressed);
+            var memStream = new MemoryStream(bytes);
             return memStream;
         }
     }

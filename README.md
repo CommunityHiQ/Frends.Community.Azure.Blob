@@ -32,6 +32,8 @@ Uploads file to target container. If the container doesn't exist, it will be cre
 | Property | Type | Description | Example |
 | -------- | -------- | -------- | -------- |
 | Source File | string | Full path to file that is uploaded. | 'c:\temp\uploadMe.xml' |
+| Contents Only | bool | Reads file content as string and treats content as selected Encoding | true |
+| Compress | bool | Applies gzip compression to file or file content | true |
 | Connection String | string | Connection string to Azure storage | 'UseDevelopmentStorage=true' |
 | Container Name | string | Name of the azure blob storage container where the data will be uploaded. If the container doesn't exist, then it will be created. See [Naming and Referencing Containers](https://docs.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata) for naming conventions. | 'my-container' |
 | Create container if it does not exist | bool | Tries to create the container if it does not exist. | false |
@@ -39,6 +41,8 @@ Uploads file to target container. If the container doesn't exist, it will be cre
 | Rename To | string | If value is set, uploaded file will be renamed to this. | 'newFileName.xml' |
 | Overwrite | bool | Should upload operation overwrite existing file with same name. | true |
 | ParallelOperations | int | The number of the concurrent operations. | 64 |
+| Content-Type | string | Forces any content-type to file. If empty, tries to guess based on extension and MIME-type | text/xml |
+| Content-Encoding | string | File content is treated as this. Does not affect file encoding when Contents Only is true. If compression is enabled, Content-Type is set as 'gzip' | utf8 |
 
 ### Returns
 
@@ -184,3 +188,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | 1.2.0 | Wrote documentation according to development quide lines. Added DownloadBlobAsync, ReadBlobContentAsync and ListBlobs tasks. |
 | 1.3.0 | New parameters in multiple tasks. New return value in list task. Tasks now use System.ComponentModel.DataAnnotations |
 | 1.4.0 | Updated dependencies due potential security vulnerabilities. |
+| 1.5.0 | File upload now uses stream. Added options to compress or read file as string with Contents Only. Added Content-Type and Content-Encoding fields. |

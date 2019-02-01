@@ -2,16 +2,11 @@
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.DataMovement;
 using System;
-using System.CodeDom;
 using System.ComponentModel;
 using System.IO;
-using System.IO.Compression;
-using System.Net.Mime;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Microsoft.WindowsAzure.Storage;
 
 #pragma warning disable CS1591 
 

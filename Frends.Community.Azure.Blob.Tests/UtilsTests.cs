@@ -93,7 +93,7 @@ namespace Frends.Community.Azure.Blob.Tests
             }
             
             using(var file = _file.Open(FileMode.Open, FileAccess.Read))
-                Assert.IsTrue(file.CanRead); // file is closed properly.
+                Assert.IsTrue(file.CanRead); // == streams dispose and file is closed properly.
         }
 
         [TestMethod]
