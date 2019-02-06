@@ -1,9 +1,10 @@
-﻿using TestConfigurationHandler;
-using System;
+﻿using System;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage.Blob;
+using TestConfigurationHandler;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
@@ -11,32 +12,32 @@ namespace Frends.Community.Azure.Blob.Tests
     public class UploadTest
     {
         /// <summary>
-        /// Container name for tests
-        /// </summary>
-        private string _containerName;
-
-        /// <summary>
-        /// Connection string for Azure Storage Emulator
+        ///     Connection string for Azure Storage Emulator
         /// </summary>
         private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
 
         /// <summary>
-        /// Some random file for test purposes
+        ///     Container name for tests
         /// </summary>
-        private string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
+        private string _containerName;
+
+        /// <summary>
+        ///     Some random file for test purposes
+        /// </summary>
+        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
 
         [TestInitialize]
         public void TestSetup()
         {
             // Generate unique container name to avoid conflicts when running multiple tests
-            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff")}";
+            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff", CultureInfo.InvariantCulture)}";
         }
 
         [TestCleanup]
         public async Task Cleanup()
         {
             // delete whole container after running tests
-            CloudBlobContainer container = Utils.GetBlobContainer(_connectionString, _containerName);
+            var container = Utils.GetBlobContainer(_connectionString, _containerName);
             await container.DeleteIfExistsAsync();
         }
 
@@ -44,8 +45,8 @@ namespace Frends.Community.Azure.Blob.Tests
         [ExpectedException(typeof(ArgumentException))]
         public async Task UploadFileAsync_ShouldThrowArgumentExceptionIfFileWasNotFound()
         {
-            var result = await UploadTask.UploadFileAsync(
-                new UploadInput { SourceFile = "NonExistingFile" },
+            await UploadTask.UploadFileAsync(
+                new UploadInput {SourceFile = "NonExistingFile"},
                 new DestinationProperties(),
                 new CancellationToken());
         }
@@ -96,6 +97,107 @@ namespace Frends.Community.Azure.Blob.Tests
             var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
 
             StringAssert.EndsWith(result.Uri, $"{_containerName}/RenamedFile.xml");
+        }
+
+        [TestMethod]
+        public async Task UploadFileAsync_ShouldUploadCompressedFile()
+        {
+            var input = new UploadInput
+            {
+                SourceFile = _testFilePath,
+                Compress = true,
+                ContentsOnly = true
+            };
+
+            var guid = Guid.NewGuid().ToString();
+            var renameTo = guid + ".gz";
+
+            var options = new DestinationProperties
+            {
+                ContainerName = _containerName,
+                BlobType = AzureBlobType.Block,
+                ParallelOperations = 24,
+                ConnectionString = _connectionString,
+                Overwrite = false,
+                CreateContainerIfItDoesNotExist = true,
+                ContentType = "text/xml",
+                FileEncoding = "utf8",
+                RenameTo = renameTo
+            };
+            var container = Utils.GetBlobContainer(_connectionString, _containerName);
+
+            await UploadTask.UploadFileAsync(input, options, new CancellationToken());
+            var blobResult = Utils.GetCloudBlob(container, renameTo, AzureBlobType.Block);
+
+            Assert.IsTrue(blobResult.Exists(), "Uploaded TestFile.xml blob should exist");
+        }
+
+        [TestMethod]
+        public async Task UploadFileAsync_ContentTypeIsForcedProperly()
+        {
+            var input = new UploadInput
+            {
+                SourceFile = _testFilePath,
+                Compress = false,
+                ContentsOnly = false
+            };
+
+            var guid = Guid.NewGuid().ToString();
+            var renameTo = guid + ".gz";
+
+            var options = new DestinationProperties
+            {
+                ContainerName = _containerName,
+                BlobType = AzureBlobType.Block,
+                ParallelOperations = 24,
+                ConnectionString = _connectionString,
+                Overwrite = false,
+                CreateContainerIfItDoesNotExist = true,
+                ContentType = "foo/bar",
+                FileEncoding = "utf8",
+                RenameTo = renameTo
+            };
+            var container = Utils.GetBlobContainer(_connectionString, _containerName);
+
+            await UploadTask.UploadFileAsync(input, options, new CancellationToken());
+            var blobResult = (CloudBlockBlob) Utils.GetCloudBlob(container, renameTo, AzureBlobType.Block);
+            await blobResult.FetchAttributesAsync();
+
+            Assert.IsTrue(blobResult.Properties.ContentType == "foo/bar");
+        }
+
+        [TestMethod]
+        public async Task UploadFileAsync_ContentEncodingIsGzipWhenCompressed()
+        {
+            var input = new UploadInput
+            {
+                SourceFile = _testFilePath,
+                Compress = true,
+                ContentsOnly = true
+            };
+
+            var guid = Guid.NewGuid().ToString();
+            var renameTo = guid + ".gz";
+
+            var options = new DestinationProperties
+            {
+                ContainerName = _containerName,
+                BlobType = AzureBlobType.Block,
+                ParallelOperations = 24,
+                ConnectionString = _connectionString,
+                Overwrite = false,
+                CreateContainerIfItDoesNotExist = true,
+                ContentType = "foo/bar",
+                FileEncoding = "utf8",
+                RenameTo = renameTo
+            };
+            var container = Utils.GetBlobContainer(_connectionString, _containerName);
+
+            await UploadTask.UploadFileAsync(input, options, new CancellationToken());
+            var blobResult = (CloudBlockBlob) Utils.GetCloudBlob(container, renameTo, AzureBlobType.Block);
+            await blobResult.FetchAttributesAsync();
+
+            Assert.IsTrue(blobResult.Properties.ContentEncoding == "gzip");
         }
     }
 }

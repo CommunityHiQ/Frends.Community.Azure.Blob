@@ -1,11 +1,8 @@
-﻿using TestConfigurationHandler;
-using Microsoft.WindowsAzure.Storage.Blob;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestConfigurationHandler;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
@@ -13,40 +10,45 @@ namespace Frends.Community.Azure.Blob.Tests
     public class ListTests
     {
         /// <summary>
-        /// Container name for tests
-        /// </summary>
-        private string _containerName;
-        
-        /// <summary>
-        /// Connection string for Azure Storage Emulator
+        ///     Connection string for Azure Storage Emulator
         /// </summary>
         private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
 
         /// <summary>
-        /// Test blob name
+        ///     Test blob name
         /// </summary>
         private readonly string _testBlob = "test-blob.txt";
 
         /// <summary>
-        /// Some random file for test purposes
+        ///     Container name for tests
         /// </summary>
-        private string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
+        private string _containerName;
 
         private ListSourceProperties _sourceProperties;
+
+        /// <summary>
+        ///     Some random file for test purposes
+        /// </summary>
+        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
 
         [TestInitialize]
         public async Task TestSetup()
         {
             // Generate unique container name to avoid conflicts when running multiple tests
-            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff")}";
+            _containerName = $"test-container{DateTime.Now.ToString("mmssffffff", CultureInfo.InvariantCulture)}";
 
-            _sourceProperties = new ListSourceProperties { ConnectionString = _connectionString, ContainerName = _containerName, FlatBlobListing = false };
+            _sourceProperties = new ListSourceProperties
+            {
+                ConnectionString = _connectionString,
+                ContainerName = _containerName,
+                FlatBlobListing = false
+            };
 
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
             await container.CreateIfNotExistsAsync();
 
             // Retrieve reference to a blob named "myblob".
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference(_testBlob);
+            var blockBlob = container.GetBlockBlobReference(_testBlob);
             await blockBlob.UploadFromFileAsync(_testFilePath);
             var blobWithDir = container.GetBlockBlobReference("directory/test-blob2.txt");
             await blobWithDir.UploadFromFileAsync(_testFilePath);
@@ -56,7 +58,7 @@ namespace Frends.Community.Azure.Blob.Tests
         public async Task Cleanup()
         {
             // delete whole container after running tests
-            CloudBlobContainer container = Utils.GetBlobContainer(_connectionString, _containerName);
+            var container = Utils.GetBlobContainer(_connectionString, _containerName);
             await container.DeleteIfExistsAsync();
         }
 

@@ -1,10 +1,10 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 #pragma warning disable CS1591
 
@@ -20,8 +20,7 @@ namespace Frends.Community.Azure.Blob
                 if (string.IsNullOrWhiteSpace(value))
                     return Encoding.Default;
                 // check if encoding is given as code page
-                int valueInt = 0;
-                if (int.TryParse(value, out valueInt))
+                if (int.TryParse(value, out var valueInt))
                     return Encoding.GetEncoding(valueInt);
 
                 // otherwise encoding name is given
@@ -34,20 +33,19 @@ namespace Frends.Community.Azure.Blob
         }
 
         /// <summary>
-        /// Returns blob encoding if set, otherwise returns system default encoding
+        ///     Returns blob encoding if set, otherwise returns system default encoding
         /// </summary>
         /// <param name="blob"></param>
         /// <returns>Blob encoding</returns>
         public static Encoding GetEncoding(this CloudBlob blob)
         {
-            if (blob.Properties == null || string.IsNullOrEmpty(blob.Properties.ContentEncoding))
-                return Encoding.Default;
-
-            return blob.Properties.ContentEncoding.ConvertToEncoding();
+            return string.IsNullOrEmpty(blob?.Properties.ContentEncoding)
+                ? Encoding.Default
+                : blob.Properties.ContentEncoding.ConvertToEncoding();
         }
 
         /// <summary>
-        /// Reads blob content to string
+        ///     Reads blob content to string
         /// </summary>
         /// <param name="blobReference"></param>
         /// <param name="cancellationToken"></param>
@@ -60,14 +58,16 @@ namespace Frends.Community.Azure.Blob
                 {
                     await blobReference.DownloadToStreamAsync(blobStream, cancellationToken);
                     blobStream.Seek(0, SeekOrigin.Begin);
-                    Encoding encoding = blobReference.GetEncoding();
+                    var encoding = blobReference.GetEncoding();
 
                     if (blobReference.IsGZipped())
                         using (var gzipStream = new GZipStream(blobStream, CompressionMode.Decompress))
+                        {
                             gzipStream.CopyTo(outputStream);
+                        }
                     else
                         blobStream.CopyTo(outputStream);
-                    
+
                     return encoding.GetString(outputStream.ToArray());
                 }
             }
@@ -75,12 +75,13 @@ namespace Frends.Community.Azure.Blob
 
         public static bool IsGZipped(this CloudBlob cloudBlob)
         {
-            return cloudBlob.Properties != null && cloudBlob.Properties.ContentEncoding != null && cloudBlob.Properties.ContentEncoding.Equals("gzip", System.StringComparison.InvariantCultureIgnoreCase);
+            return cloudBlob?.Properties?.ContentEncoding != null &&
+                   cloudBlob.Properties.ContentEncoding.Equals("gzip", StringComparison.InvariantCultureIgnoreCase);
         }
-        
+
         public static TEnum ConvertEnum<TEnum>(this Enum source)
         {
-            return (TEnum)Enum.Parse(typeof(TEnum), source.ToString(), true);
+            return (TEnum) Enum.Parse(typeof(TEnum), source.ToString(), true);
         }
     }
 }
