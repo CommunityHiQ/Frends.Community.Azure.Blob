@@ -106,7 +106,7 @@ Reads blob content to string.
 | Container Name | string | Name of the azure blob storage container from where blob data is located. | 'my-container' |
 | Blob Name | string | Name of the blob which content is read. | 'donwloadMe.xml' |
 | Blob Type | enum: Append, Block or Page  | Azure blob type to read. | Block |
-| Encoding Name | string | Encoding name in which blob content is read. | 'UTF-8' |
+| Encoding | string | Encoding name in which blob content is read. | 'UTF-8' |
 
 ### Returns: 
 
