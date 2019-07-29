@@ -189,3 +189,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | 1.3.0 | New parameters in multiple tasks. New return value in list task. Tasks now use System.ComponentModel.DataAnnotations |
 | 1.4.0 | Updated dependencies due potential security vulnerabilities. |
 | 1.5.0 | File upload now uses stream. Added options to compress or read file as string with Contents Only. Added Content-Type and Content-Encoding fields. |
+| 1.5.0 | Added encoding option to ReadBlobContentAsync task. |
