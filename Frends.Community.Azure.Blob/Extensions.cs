@@ -48,9 +48,10 @@ namespace Frends.Community.Azure.Blob
         ///     Reads blob content to string
         /// </summary>
         /// <param name="blobReference"></param>
+        /// <param name="encoding"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>Blob content</returns>
-        public static async Task<string> ReadContents(this CloudBlob blobReference, CancellationToken cancellationToken)
+        public static async Task<string> ReadContents(this CloudBlob blobReference, Encoding encoding, CancellationToken cancellationToken)
         {
             using (var blobStream = new MemoryStream())
             {
@@ -58,7 +59,6 @@ namespace Frends.Community.Azure.Blob
                 {
                     await blobReference.DownloadToStreamAsync(blobStream, cancellationToken);
                     blobStream.Seek(0, SeekOrigin.Begin);
-                    var encoding = blobReference.GetEncoding();
 
                     if (blobReference.IsGZipped())
                         using (var gzipStream = new GZipStream(blobStream, CompressionMode.Decompress))

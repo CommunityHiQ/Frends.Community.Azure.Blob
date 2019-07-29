@@ -60,8 +60,10 @@ namespace Frends.Community.Azure.Blob
             var blobReference = Utils.GetCloudBlob(container, sourceProperties.BlobName, sourceProperties.BlobType);
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
-            var encoding = blobReference.GetEncoding();
-            var content = await blobReference.ReadContents(cancellationToken);
+            
+            var encoding = string.IsNullOrEmpty(sourceProperties.Encoding) ? blobReference.GetEncoding() : Encoding.GetEncoding(sourceProperties.Encoding);
+
+            var content = await blobReference.ReadContents(encoding, cancellationToken);
             switch (operation)
             {
                 case SourceBlobOperation.Read:
@@ -150,6 +152,13 @@ namespace Frends.Community.Azure.Blob
         [DisplayName("Blob Type")]
         [DefaultValue(AzureBlobType.Block)]
         public AzureBlobType BlobType { get; set; }
+
+        /// <summary>
+        ///     Set encoding manually. Empty value tries to get encoding set in Azure.
+        /// </summary>
+        [DefaultValue("UTF-8")]
+        [DisplayFormat(DataFormatString = "Text")]
+        public string Encoding { get; set; }
     }
 
     public class DestinationFileProperties
