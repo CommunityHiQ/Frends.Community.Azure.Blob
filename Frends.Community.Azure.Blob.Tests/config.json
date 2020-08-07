@@ -1,5 +1,0 @@
-{
-    "configlist": [
-        { "key": "HiQ.AzureBlobStorage.ConnString", "value": "UseDevelopmentStorage=true" }
-    ]
-}

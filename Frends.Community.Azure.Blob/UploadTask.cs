@@ -5,10 +5,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.DataMovement;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.DataMovement;
 
-#pragma warning disable CS1591 
+#pragma warning disable CS1591
 
 namespace Frends.Community.Azure.Blob
 {
@@ -24,7 +24,7 @@ namespace Frends.Community.Azure.Blob
         {
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
-
+#if net471
             // check that source file exists
             var fi = new FileInfo(input.SourceFile);
             if (!fi.Exists)
@@ -104,6 +104,9 @@ namespace Frends.Community.Azure.Blob
 
             // return uri to uploaded blob and source file path
             return new UploadOutput {SourceFile = input.SourceFile, Uri = destinationBlob.Uri.ToString()};
+#else
+            throw new Exception("Only supported on .NET Framework");
+#endif
         }
     }
 

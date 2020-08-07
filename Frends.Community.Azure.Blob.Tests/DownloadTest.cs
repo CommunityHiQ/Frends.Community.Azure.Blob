@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using TestConfigurationHandler;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
@@ -14,7 +13,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         ///     Connection string for Azure Storage Emulator
         /// </summary>
-        private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
+        private readonly string _connectionString = Environment.GetEnvironmentVariable("HiQ.AzureBlobStorage.ConnString", EnvironmentVariableTarget.User);
 
         /// <summary>
         ///     Some random file for test purposes
