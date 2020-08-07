@@ -11,7 +11,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         ///     Connection string for Azure Storage Emulator
         /// </summary>
-        private readonly string _connectionString = Environment.GetEnvironmentVariable("HiQ.AzureBlobStorage.ConnString", EnvironmentVariableTarget.User);
+        private readonly string _connectionString = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ConnString", EnvironmentVariableTarget.User);
 
         /// <summary>
         ///     Test blob name
