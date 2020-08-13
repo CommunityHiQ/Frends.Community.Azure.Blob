@@ -5,7 +5,9 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.File;
 using Microsoft.Azure.Storage.DataMovement;
 
 #pragma warning disable CS1591
@@ -24,7 +26,7 @@ namespace Frends.Community.Azure.Blob
         {
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
-#if net471
+
             // check that source file exists
             var fi = new FileInfo(input.SourceFile);
             if (!fi.Exists)
@@ -36,7 +38,7 @@ namespace Frends.Community.Azure.Blob
 
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
-
+#if NET471
             try
             {
                 if (destinationProperties.CreateContainerIfItDoesNotExist)
@@ -75,7 +77,7 @@ namespace Frends.Community.Azure.Blob
             // Setup the transfer context and track the upload progress
             var transferContext = new SingleTransferContext
             {
-                SetAttributesCallback = destination =>
+                SetAttributesCallbackAsync = async (destination) =>
                 {
                     if (!(destination is CloudBlob)) throw new Exception("We did not get CloudBlob reference. ");
                     var cloudBlob = (CloudBlob) destination;
