@@ -3,8 +3,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Blob;
-using TestConfigurationHandler;
+using Microsoft.Azure.Storage.Blob;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
@@ -14,7 +13,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         ///     Connection string for Azure Storage Emulator
         /// </summary>
-        private readonly string _connectionString = ConfigHandler.ReadConfigValue("HiQ.AzureBlobStorage.ConnString");
+        private readonly string _connectionString = Environment.GetEnvironmentVariable("HIQ_AZUREBLOBSTORAGE_CONNSTRING", EnvironmentVariableTarget.User);
 
         /// <summary>
         ///     Container name for tests
