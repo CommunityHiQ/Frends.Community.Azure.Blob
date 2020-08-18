@@ -9,8 +9,8 @@ on:
 
 jobs:
   build:
-    name: Build on windows-latest
-    runs-on: windows-latest
+    name: Build on self-hosted
+    runs-on: self-hosted
     
     steps:
     - uses: actions/checkout@v1
