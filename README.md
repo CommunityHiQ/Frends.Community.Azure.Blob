@@ -20,7 +20,7 @@ https://github.com/Azure/azure-storage-net-data-movement
 # Installing
 
 You can install the task via FRENDS UI Task View or you can find the nuget package from the following nuget feed
-'Insert nuget feed here'
+'Insert nuget feed here' 
 
 # Tasks
 
