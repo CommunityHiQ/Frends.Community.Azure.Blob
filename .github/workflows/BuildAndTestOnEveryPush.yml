@@ -19,6 +19,8 @@ jobs:
       run: dotnet build
     
     - name: Test
+      env:
+        HIQ_AZUREBLOBSTORAGE_CONNSTRING:  ${{ secrets.HIQ_AZUREBLOBSTORAGE_CONNSTRING }}
       run: dotnet test
       
     - name: Pack release version of task
