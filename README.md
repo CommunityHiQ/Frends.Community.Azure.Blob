@@ -71,6 +71,8 @@ Result is a list of object with following properties
 | Uri | string | Blob Uri | |
 | BlobType | string | Type of the blob. Either 'Block','Page' or 'Directory' | 'Block' |
 | ETag | string | Value that is updated everytime blob is updated | 
+| LastModified | DateTimeOffset? | Last-modified time for the blob in UTC format |
+| CreatedOn | DateTimeOffset? | Creation time for the blob in UTC format |
 
 
 ## DownloadBlobAsync
