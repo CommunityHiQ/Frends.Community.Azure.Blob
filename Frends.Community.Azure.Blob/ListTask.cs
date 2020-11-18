@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.WindowsAzure.Storage.Blob;
@@ -33,7 +34,9 @@ namespace Frends.Community.Azure.Blob
                         BlobType = "Block",
                         Uri = blockBlob.Uri.ToString(),
                         Name = blockBlob.Name,
-                        ETag = blockBlob.Properties.ETag
+                        ETag = blockBlob.Properties.ETag,
+                        LastModified = blockBlob.Properties.LastModified,
+                        CreatedOn = blockBlob.Properties.Created
                     });
                 }
                 else if (blobType == typeof(CloudPageBlob))
@@ -44,7 +47,9 @@ namespace Frends.Community.Azure.Blob
                         BlobType = "Page",
                         Uri = pageBlob.Uri.ToString(),
                         Name = pageBlob.Name,
-                        ETag = pageBlob.Properties.ETag
+                        ETag = pageBlob.Properties.ETag,
+                        LastModified = pageBlob.Properties.LastModified,
+                        CreatedOn = pageBlob.Properties.Created
                     });
                 }
                 else if (blobType == typeof(CloudBlobDirectory))
@@ -102,5 +107,7 @@ namespace Frends.Community.Azure.Blob
         public string Uri { get; set; }
         public string Name { get; set; }
         public string ETag { get; set; }
+        public DateTimeOffset? LastModified { get; set; }
+        public DateTimeOffset? CreatedOn { get; set; }
     }
 }
