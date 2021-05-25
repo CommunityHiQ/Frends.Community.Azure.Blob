@@ -57,7 +57,7 @@ Uploads file to target container. If the container doesn't exist, it will be cre
 
 | Property | Type | Description | Example |
 | -------- | -------- | -------- | -------- |
-| Data content | string | raw data to upload | 'raw data' |
+| Data content | string | raw data to upload, note: uses Content-Encoding variable to determine string encoding, defaults to UTF-8 BOM | 'raw data' |
 | Target File | string | File name in blob | 'uploaded.xml' |
 
 ### Returns
