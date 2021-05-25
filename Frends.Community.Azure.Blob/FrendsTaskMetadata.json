@@ -4,6 +4,9 @@
       "TaskMethod": "Frends.Community.Azure.Blob.UploadTask.UploadFileAsync"
     },
     {
+      "TaskMethod": "Frends.Community.Azure.Blob.UploadTask.UploadDataAsync"
+    },
+    {
       "TaskMethod": "Frends.Community.Azure.Blob.ListTask.ListBlobs"
     },
     {

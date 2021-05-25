@@ -105,6 +105,91 @@ namespace Frends.Community.Azure.Blob
             // return uri to uploaded blob and source file path
             return new UploadOutput {SourceFile = input.SourceFile, Uri = destinationBlob.Uri.ToString()};
         }
+
+        /// <summary>
+        ///     Uploads a string data to Azure blob storage. See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
+        ///     Will create given container on connection if necessary.
+        /// </summary>
+        /// <returns>Object { string Uri, string SourceFile }</returns>
+        public static async Task<UploadOutput> UploadDataAsync(UpdateDataInput input,
+            DestinationProperties destinationProperties, CancellationToken cancellationToken)
+        {
+            // check for interruptions
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // get container
+            var container = Utils.GetBlobContainer(destinationProperties.ConnectionString,
+                destinationProperties.ContainerName);
+
+            // check for interruptions
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                if (destinationProperties.CreateContainerIfItDoesNotExist)
+                    await container.CreateIfNotExistsAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Checking if container exists or creating new container caused an exception.", ex);
+            }
+
+            // get the destination blob, rename if necessary
+            var destinationBlob = Utils.GetCloudBlob(container,
+                string.IsNullOrWhiteSpace(destinationProperties.RenameTo) ? input.BlobFileName : destinationProperties.RenameTo,
+                destinationProperties.BlobType);
+
+            var contentType = string.IsNullOrWhiteSpace(destinationProperties.ContentType)
+                ? MimeMapping.GetMimeMapping(input.BlobFileName)
+                : destinationProperties.ContentType;
+
+            var encoding = destinationProperties.FileEncoding.ConvertToEncoding();
+
+            // delete blob if user requested overwrite
+            if (destinationProperties.Overwrite) await destinationBlob.DeleteIfExistsAsync(cancellationToken);
+
+            // setup the number of the concurrent operations
+            TransferManager.Configurations.ParallelOperations = destinationProperties.ParallelOperations;
+
+            // Use UploadOptions to set ContentType of destination CloudBlob
+            var uploadOptions = new UploadOptions();
+
+            var progressHandler = new Progress<TransferStatus>(progress =>
+            {
+                Console.WriteLine("Bytes uploaded: {0}", progress.BytesTransferred);
+            });
+
+
+            // Setup the transfer context and track the upload progress
+            var transferContext = new SingleTransferContext
+            {
+                SetAttributesCallback = destination =>
+                {
+                    if (!(destination is CloudBlob)) throw new Exception("We did not get CloudBlob reference. ");
+                    var cloudBlob = (CloudBlob)destination;
+                    cloudBlob.Properties.ContentType = contentType;
+                    cloudBlob.Properties.ContentEncoding = encoding.WebName;
+                },
+
+                ProgressHandler = progressHandler
+            };
+
+            // begin and await for upload to complete
+            try
+            {
+                using (MemoryStream memoryStream = new MemoryStream(encoding.GetBytes(input.SourceData)))
+                {
+                    await TransferManager.UploadAsync(memoryStream, destinationBlob, uploadOptions, transferContext, cancellationToken);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new Exception("UploadFileAsync: Error occured while uploading file to blob storage", e);
+            }
+
+            // return uri to uploaded blob and source file path
+            return new UploadOutput { SourceFile = input.BlobFileName, Uri = destinationBlob.Uri.ToString() };
+        }
     }
 
     public class UploadOutput
@@ -205,6 +290,19 @@ namespace Frends.Community.Azure.Blob
         [DefaultValue(false)]
         [DisplayName("Gzip compression")]
         public bool Compress { get; set; }
+    }
+
+    public class UpdateDataInput
+    {
+        [DefaultValue(@"raw data")]
+        [DisplayName("Data content")]
+        [DisplayFormat(DataFormatString = "Text")]
+        public string SourceData { get; set; }
+
+        [DefaultValue(@"TestFile.xml")]
+        [DisplayName("Target File")]
+        [DisplayFormat(DataFormatString = "Text")]
+        public string BlobFileName { get; set; }
     }
 
     public enum AzureBlobType
