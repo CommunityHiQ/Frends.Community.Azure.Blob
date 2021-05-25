@@ -51,6 +51,22 @@ Uploads file to target container. If the container doesn't exist, it will be cre
 | SourceFile | string | Full path of file uploaded | |
 | Uri | string | Uri to uploaded blob | |
 
+## UploadDataAsync
+
+### Properties
+
+| Property | Type | Description | Example |
+| -------- | -------- | -------- | -------- |
+| Data content | string | raw data to upload | 'raw data' |
+| Target File | string | File name in blob | 'c:\temp\uploadMe.xml' |
+
+### Returns
+
+| Property | Type | Description | Example |
+| -------- | -------- | -------- | -------- |
+| SourceFile | string | Full path of file uploaded | |
+| Uri | string | Uri to uploaded blob | |
+
 ## ListBlobs
 List blobs in container.
 
