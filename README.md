@@ -58,7 +58,7 @@ Uploads file to target container. If the container doesn't exist, it will be cre
 | Property | Type | Description | Example |
 | -------- | -------- | -------- | -------- |
 | Data content | string | raw data to upload | 'raw data' |
-| Target File | string | File name in blob | 'c:\temp\uploadMe.xml' |
+| Target File | string | File name in blob | 'uploaded.xml' |
 
 ### Returns
 
