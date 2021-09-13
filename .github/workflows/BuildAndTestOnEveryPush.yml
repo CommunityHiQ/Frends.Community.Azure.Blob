@@ -4,13 +4,11 @@ on:
   push:
     branches-ignore:
       - master
-      
-# nice example: https://github.com/microsoft/vs-editor-api/blob/master/.github/workflows/main.yml
 
 jobs:
   build:
-    name: Build on self-hosted
-    runs-on: self-hosted
+    name: Build on windows-latest
+    runs-on: windows-latest
     
     steps:
     - uses: actions/checkout@v1
@@ -24,11 +22,7 @@ jobs:
       run: dotnet test
       
     - name: Pack release version of task
-      if: runner.os == 'Windows' 
       run: dotnet pack --configuration Release --include-source
       
     - name: Push NuGet package to the testfeed
-      if: runner.os == 'Windows' 
       run: dotnet nuget push Frends.Community.Azure.Blob\bin\Release\Frends.Community.Azure.Blob.*.nupkg  --api-key ${{ secrets.CommunityFeedApiKey }} --source https://www.myget.org/F/frends-community-test/api/v2/package --symbol-source https://www.myget.org/F/frends-community-test/symbols/api/v2/package
-
-
