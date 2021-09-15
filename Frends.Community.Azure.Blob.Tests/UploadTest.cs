@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +24,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         ///     Some random file for test purposes
         /// </summary>
-        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
+        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}{Path.DirectorySeparatorChar}TestFiles{Path.DirectorySeparatorChar}TestFile.xml";
 
         [TestInitialize]
         public void TestSetup()
