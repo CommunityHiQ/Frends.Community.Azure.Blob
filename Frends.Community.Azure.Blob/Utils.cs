@@ -1,8 +1,7 @@
 ﻿using System.IO;
 using System.IO.Compression;
 using System.Text;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
+using Azure.Storage.Blobs;
 
 #pragma warning disable CS1591
 
@@ -10,19 +9,19 @@ namespace Frends.Community.Azure.Blob
 {
     public class Utils
     {
-        public static CloudBlobContainer GetBlobContainer(string connectionString, string containerName)
+        public static BlobContainerClient GetBlobContainer(string connectionString, string containerName)
         {
             // initialize azure account
-            var account = CloudStorageAccount.Parse(connectionString);
+            var blobServiceClient = new BlobServiceClient(connectionString);
 
-            // initialize blob client
-            var client = account.CreateCloudBlobClient();
-
-            return client.GetContainerReference(containerName);
+            // Fetch the container client
+            return blobServiceClient.GetBlobContainerClient(containerName);
         }
 
-        public static CloudBlob GetCloudBlob(CloudBlobContainer container, string blobName, AzureBlobType blobType)
+        /*public static BlobClient GetCloudBlobClient(string connectionString, string containerName, string blobName)
         {
+            // Fetch Blob client
+            var blobClient = container.GetBlobClient(blobName);
             switch (blobType)
             {
                 case AzureBlobType.Append:
@@ -34,9 +33,9 @@ namespace Frends.Community.Azure.Blob
                 default:
                     return container.GetBlockBlobReference(blobName);
             }
-        }
+        }*/
 
-        public static string GetRenamedFileName(string fileName, string directory)
+        /*public static string GetRenamedFileName(string fileName, string directory)
         {
             // if fileName is available, just return that
             if (!File.Exists(Path.Combine(directory, fileName)))
@@ -49,7 +48,7 @@ namespace Frends.Community.Azure.Blob
             while (File.Exists(Path.Combine(directory, $"{name}({index}){extension}"))) index++;
 
             return $"{name}({index}){extension}";
-        }
+        }*/
 
         /// <summary>
         ///     Gets correct stream object. Does not always dispose, so use using.

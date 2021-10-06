@@ -4,11 +4,12 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
-using Microsoft.Azure.Storage.File;
-using Microsoft.Azure.Storage.DataMovement;
+using System.Text;
+using System.Linq;
+using MimeMapping;
+using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 #pragma warning disable CS1591
 
@@ -38,54 +39,82 @@ namespace Frends.Community.Azure.Blob
 
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
-#if NET471
             try
             {
                 if (destinationProperties.CreateContainerIfItDoesNotExist)
-                    await container.CreateIfNotExistsAsync(cancellationToken);
+                    await container.CreateIfNotExistsAsync(PublicAccessType.None, null, null, cancellationToken);
             }
             catch (Exception ex)
             {
                 throw new Exception("Checking if container exists or creating new container caused an exception.", ex);
             }
 
+            var fileName = "";
+            if (string.IsNullOrWhiteSpace(destinationProperties.RenameTo) && input.Compress)
+            {
+                fileName = fi.Name + ".gz";
+            }
+            else if (string.IsNullOrWhiteSpace(destinationProperties.RenameTo))
+            {
+                fileName = fi.Name;
+            }
+            else
+            {
+                fileName = destinationProperties.RenameTo;
+            }
+
+            // return uri to uploaded blob and source file path
+            return await UploadBlockBlob(input, destinationProperties, fi, fileName, cancellationToken);
+        }
+
+        private static Encoding GetEncoding(string target)
+        {
+            switch (target.ToLower())
+            {
+                case "utf-8":
+                    return Encoding.UTF8;
+                case "utf-7":
+                    return Encoding.UTF7;
+                case "utf-32":
+                    return Encoding.UTF32;
+                case "unicode":
+                    return Encoding.Unicode;
+                case "ascii":
+                    return Encoding.ASCII;
+                default:
+                    return Encoding.UTF8;
+            }
+        }
+
+        private static async Task<UploadOutput> UploadBlockBlob(UploadInput input,
+            DestinationProperties destinationProperties,
+            FileInfo fi,
+            string fileName,
+            CancellationToken cancellationToken)
+        {
             // get the destination blob, rename if necessary
-            var destinationBlob = Utils.GetCloudBlob(container,
-                string.IsNullOrWhiteSpace(destinationProperties.RenameTo) ? fi.Name : destinationProperties.RenameTo,
-                destinationProperties.BlobType);
+            var blob = new BlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
 
             var contentType = string.IsNullOrWhiteSpace(destinationProperties.ContentType)
-                ? MimeMapping.GetMimeMapping(fi.Name)
+                ? MimeUtility.GetMimeMapping(fi.Name)
                 : destinationProperties.ContentType;
 
-            var encoding = destinationProperties.FileEncoding.ConvertToEncoding();
+            var encoding = GetEncoding(destinationProperties.FileEncoding);
 
             // delete blob if user requested overwrite
-            if (destinationProperties.Overwrite) await destinationBlob.DeleteIfExistsAsync(cancellationToken);
+            if (destinationProperties.Overwrite) await blob.DeleteIfExistsAsync(DeleteSnapshotsOption.None, null, cancellationToken);
 
-            // setup the number of the concurrent operations
-            TransferManager.Configurations.ParallelOperations = destinationProperties.ParallelOperations;
-
-            // Use UploadOptions to set ContentType of destination CloudBlob
-            var uploadOptions = new UploadOptions();
-
-            var progressHandler = new Progress<TransferStatus>(progress =>
+            var progressHandler = new Progress<long>(progress =>
             {
-                Console.WriteLine("Bytes uploaded: {0}", progress.BytesTransferred);
+                Console.WriteLine("Bytes uploaded: {0}", progress);
             });
 
-            // Setup the transfer context and track the upload progress
-            var transferContext = new SingleTransferContext
+            // setup the number of the concurrent operations
+            var uploadOptions = new BlobUploadOptions
             {
-                SetAttributesCallbackAsync = async (destination) =>
-                {
-                    if (!(destination is CloudBlob)) throw new Exception("We did not get CloudBlob reference. ");
-                    var cloudBlob = (CloudBlob) destination;
-                    cloudBlob.Properties.ContentType = contentType;
-                    cloudBlob.Properties.ContentEncoding = input.Compress ? "gzip" : encoding.WebName;
-                },
-
-                ProgressHandler = progressHandler
+                ProgressHandler = progressHandler,
+                TransferOptions = new StorageTransferOptions { MaximumConcurrency = destinationProperties.ParallelOperations },
+                HttpHeaders = new BlobHttpHeaders { ContentType = contentType, ContentEncoding = input.Compress ? "gzip" : encoding.WebName }
             };
 
             // begin and await for upload to complete
@@ -93,10 +122,7 @@ namespace Frends.Community.Azure.Blob
             {
                 using (var stream = Utils.GetStream(input.Compress, input.ContentsOnly, encoding, fi))
                 {
-                    await TransferManager.UploadAsync(
-                        stream,
-                        destinationBlob, uploadOptions, transferContext,
-                        cancellationToken);
+                    await blob.UploadAsync(stream, uploadOptions, cancellationToken);
                 }
             }
             catch (Exception e)
@@ -104,11 +130,7 @@ namespace Frends.Community.Azure.Blob
                 throw new Exception("UploadFileAsync: Error occured while uploading file to blob storage", e);
             }
 
-            // return uri to uploaded blob and source file path
-            return new UploadOutput {SourceFile = input.SourceFile, Uri = destinationBlob.Uri.ToString()};
-#else
-            throw new Exception("Only supported on .NET Framework");
-#endif
+            return new UploadOutput { SourceFile = input.SourceFile, Uri = blob.Uri.ToString() };
         }
     }
 

@@ -2,9 +2,11 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Storage.Blobs;
 
 #pragma warning disable CS1591
 
@@ -22,12 +24,47 @@ namespace Frends.Community.Azure.Blob
         public static async Task<DownloadBlobOutput> DownloadBlobAsync(SourceProperties source,
             DestinationFileProperties destination, CancellationToken cancellationToken)
         {
-            var result = await DownloadBlob(source, destination, SourceBlobOperation.Download, cancellationToken);
+            var blob = new BlobClient(source.ConnectionString, source.ContainerName, source.BlobName);
+            var fullDestinationPath = Path.Combine(destination.Directory, source.BlobName);
+            var fileName = source.BlobName.Split('.')[0];
+            var fileExtension = "";
+            if (source.BlobName.Split('.').Length > 1)
+            {
+                fileName = string.Join(".", source.BlobName.Split('.').Take(source.BlobName.Split('.').Length - 1).ToArray());
+                fileExtension = "." + source.BlobName.Split('.').Last();
+            }
+
+            if (destination.FileExistsOperation == FileExistsAction.Error && File.Exists(fullDestinationPath))
+            {
+                throw new Exception("File already exists in destination path. Please delete the existing file or change the \"file exists operation\" to OverWrite.");
+            }
+
+            if (destination.FileExistsOperation == FileExistsAction.Rename && File.Exists(fullDestinationPath))
+            {
+                var increment = 1;
+                var incrementedFileName = fileName + increment.ToString() + fileExtension;
+                while (File.Exists(Path.Combine(destination.Directory, incrementedFileName)))
+                {
+                    increment++;
+                    incrementedFileName = fileName + increment.ToString() + fileExtension;
+                }
+                fullDestinationPath = Path.Combine(destination.Directory, incrementedFileName);
+                fileName = incrementedFileName;
+                cancellationToken.ThrowIfCancellationRequested();
+                var _ = await blob.DownloadToAsync(fullDestinationPath, cancellationToken);
+            }
+            else
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var _ = await blob.DownloadToAsync(fullDestinationPath, cancellationToken);
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            CheckAndFixFileEncoding(fullDestinationPath, destination.Directory, fileExtension, source.Encoding);
             return new DownloadBlobOutput
             {
-                Directory = result.Directory,
-                FileName = result.FileName,
-                FullPath = result.FullPath
+                Directory = destination.Directory,
+                FileName = fileName,
+                FullPath = fullDestinationPath
             };
         }
 
@@ -40,67 +77,83 @@ namespace Frends.Community.Azure.Blob
         public static async Task<ReadContentOutput> ReadBlobContentAsync(SourceProperties source,
             CancellationToken cancellationToken)
         {
-            var result = await DownloadBlob(source, null, SourceBlobOperation.Read, cancellationToken);
+            var blob = new BlobClient(source.ConnectionString, source.ContainerName, source.BlobName);
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await blob.DownloadContentAsync(cancellationToken);
             return new ReadContentOutput
             {
-                Content = result.Content
+                Content = SetStringEncoding(result.Value.Content.ToString(), source.Encoding)
             };
         }
 
-        private static async Task<DownloadOutputBase> DownloadBlob(SourceProperties sourceProperties,
-            DestinationFileProperties destinationProperties, SourceBlobOperation operation,
-            CancellationToken cancellationToken)
+        /// <summary>
+        ///     Check if the file encoding matches with given encoding and fix the encoding if it doesn't match.
+        /// </summary>
+        /// <param name="fullPath"></param>
+        /// <param name="directory"></param>
+        /// <param name="fileExtension"></param>
+        /// <param name="targetEncoding"></param>
+        /// <returns></returns>
+        private static void CheckAndFixFileEncoding(string fullPath, string directory, string fileExtension, string targetEncoding)
         {
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
-            var container = Utils.GetBlobContainer(sourceProperties.ConnectionString, sourceProperties.ContainerName);
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
-            // get reference to blob
-            var blobReference = Utils.GetCloudBlob(container, sourceProperties.BlobName, sourceProperties.BlobType);
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
-            
-            var encoding = string.IsNullOrEmpty(sourceProperties.Encoding) ? blobReference.GetEncoding() : Encoding.GetEncoding(sourceProperties.Encoding);
-
-            var content = await blobReference.ReadContents(encoding, cancellationToken);
-            switch (operation)
+            var encoding = "";
+            using (var reader = new StreamReader(fullPath, true))
             {
-                case SourceBlobOperation.Read:
-                    return new DownloadOutputBase {Content = content};
-                case SourceBlobOperation.Download:
-                    return WriteToFile(content, sourceProperties.BlobName, encoding, destinationProperties);
-                default:
-                    throw new Exception("Unknown operations. Allowed operations are Read and Download");
+                reader.Read();
+                encoding = reader.CurrentEncoding.BodyName;
+            }
+            if (targetEncoding.ToLower() != encoding)
+            {
+                Encoding newEncoding;
+                try
+                {
+                    newEncoding = Encoding.GetEncoding(targetEncoding.ToLower());
+                }
+                catch (Exception)
+                {
+                    throw new Exception("Provided encoding is not supported. Please check supported encodings from Encoding-option.");
+                }
+                var tempFilePath = Path.Combine(directory, "encodingTemp" + fileExtension);
+                using (var sr = new StreamReader(fullPath, true))
+                using (var sw = new StreamWriter(tempFilePath, false, newEncoding))
+                {
+                    var line = "";
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        sw.WriteLine(line);
+                    }
+                }
+                File.Delete(fullPath);
+                File.Copy(tempFilePath, fullPath);
+                File.Delete(tempFilePath);
             }
         }
 
-
-        private static DownloadOutputBase WriteToFile(string content, string fileName, Encoding encoding,
-            DestinationFileProperties destinationProperties)
+        /// <summary>
+        ///     Set encoding of string.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        private static string SetStringEncoding(string text, string encoding)
         {
-            var destinationFileName = fileName;
-            if (File.Exists(Path.Combine(destinationProperties.Directory, destinationFileName)))
-                switch (destinationProperties.FileExistsOperation)
-                {
-                    case FileExistsAction.Error:
-                        throw new IOException($"Destination file '{destinationFileName}' already exists.");
-                    case FileExistsAction.Rename:
-                        destinationFileName =
-                            Utils.GetRenamedFileName(destinationFileName, destinationProperties.Directory);
-                        break;
-                }
+            var bytes = Encoding.Default.GetBytes(text);
 
-            // Write blob content to file
-            var destinationFileFullPath = Path.Combine(destinationProperties.Directory, destinationFileName);
-            File.WriteAllText(destinationFileFullPath, content, encoding);
-
-            return new DownloadOutputBase
+            switch (encoding.ToLower())
             {
-                FullPath = destinationFileFullPath,
-                Directory = Path.GetDirectoryName(destinationFileFullPath),
-                FileName = Path.GetFileName(destinationFileFullPath)
-            };
+                case "utf-8":
+                    return Encoding.UTF8.GetString(bytes);
+                case "utf-7":
+                    return Encoding.UTF7.GetString(bytes);
+                case "utf-32":
+                    return Encoding.UTF32.GetString(bytes);
+                case "unicode":
+                    return Encoding.Unicode.GetString(bytes);
+                case "ascii":
+                    return Encoding.ASCII.GetString(bytes);
+                default:
+                    throw new Exception("Provided encoding is not supported. Please check supported encodings from Encoding-option.");
+            }
         }
     }
 
@@ -147,14 +200,8 @@ namespace Frends.Community.Azure.Blob
         public string BlobName { get; set; }
 
         /// <summary>
-        ///     Type of blob to download: Append, Block or Page.
-        /// </summary>
-        [DisplayName("Blob Type")]
-        [DefaultValue(AzureBlobType.Block)]
-        public AzureBlobType BlobType { get; set; }
-
-        /// <summary>
         ///     Set encoding manually. Empty value tries to get encoding set in Azure.
+        ///     Supported values are utf-8, utf-7, utf-32, unicode, bigendianunicode and ascii.
         /// </summary>
         [DefaultValue("UTF-8")]
         [DisplayFormat(DataFormatString = "Text")]
