@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Globalization;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -12,7 +11,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         ///     Connection string for Azure Storage Emulator
         /// </summary>
-        private readonly string _connectionString = Environment.GetEnvironmentVariable("HIQ_AZUREBLOBSTORAGE_CONNSTRING");
+        private readonly string _connectionString = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ConnString");
 
         /// <summary>
         ///     Test blob name
@@ -29,7 +28,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         ///     Some random file for test purposes
         /// </summary>
-        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}{Path.DirectorySeparatorChar}TestFiles{Path.DirectorySeparatorChar}TestFile.xml";
+        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
 
         [TestInitialize]
         public async Task TestSetup()
@@ -48,10 +47,10 @@ namespace Frends.Community.Azure.Blob.Tests
             await container.CreateIfNotExistsAsync();
 
             // Retrieve reference to a blob named "myblob".
-            var blockBlob = container.GetBlockBlobReference(_testBlob);
-            await blockBlob.UploadFromFileAsync(_testFilePath);
-            var blobWithDir = container.GetBlockBlobReference("directory/test-blob2.txt");
-            await blobWithDir.UploadFromFileAsync(_testFilePath);
+            var blockBlob = container.GetBlobClient(_testBlob);
+            await blockBlob.UploadAsync(_testFilePath);
+            var blobWithDir = container.GetBlobClient("directory/test-blob2.txt");
+            await blobWithDir.UploadAsync(_testFilePath);
         }
 
         [TestCleanup]
@@ -63,9 +62,9 @@ namespace Frends.Community.Azure.Blob.Tests
         }
 
         [TestMethod]
-        public void ListBlobs_ReturnBlockAndDirectory()
+        public async Task ListBlobs_ReturnBlockAndDirectory()
         {
-            var result = ListTask.ListBlobs(_sourceProperties);
+            var result = await ListTask.ListBlobs(_sourceProperties);
 
             Assert.AreEqual(2, result.Blobs.Count);
             Assert.AreEqual("Block", result.Blobs[1].BlobType);
@@ -75,10 +74,10 @@ namespace Frends.Community.Azure.Blob.Tests
         }
 
         [TestMethod]
-        public void ListBlobsWithPrefix()
+        public async Task ListBlobsWithPrefix()
         {
             _sourceProperties.FlatBlobListing = true;
-            var result = ListTask.ListBlobs(_sourceProperties);
+            var result = await ListTask.ListBlobs(_sourceProperties);
 
             Assert.AreEqual(2, result.Blobs.Count);
         }

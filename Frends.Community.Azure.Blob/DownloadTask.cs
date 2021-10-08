@@ -36,17 +36,17 @@ namespace Frends.Community.Azure.Blob
 
             if (destination.FileExistsOperation == FileExistsAction.Error && File.Exists(fullDestinationPath))
             {
-                throw new Exception("File already exists in destination path. Please delete the existing file or change the \"file exists operation\" to OverWrite.");
+                throw new IOException("File already exists in destination path. Please delete the existing file or change the \"file exists operation\" to OverWrite.");
             }
 
             if (destination.FileExistsOperation == FileExistsAction.Rename && File.Exists(fullDestinationPath))
             {
                 var increment = 1;
-                var incrementedFileName = fileName + increment.ToString() + fileExtension;
+                var incrementedFileName = fileName + "(" + increment.ToString() + ")" + fileExtension;
                 while (File.Exists(Path.Combine(destination.Directory, incrementedFileName)))
                 {
                     increment++;
-                    incrementedFileName = fileName + increment.ToString() + fileExtension;
+                    incrementedFileName = fileName + "(" + increment.ToString() + ")" + fileExtension;
                 }
                 fullDestinationPath = Path.Combine(destination.Directory, incrementedFileName);
                 fileName = incrementedFileName;
@@ -198,6 +198,13 @@ namespace Frends.Community.Azure.Blob
         [DefaultValue("example.xml")]
         [DisplayFormat(DataFormatString = "Text")]
         public string BlobName { get; set; }
+
+        /// <summary>
+        ///     Azure blob type to upload: Append, Block or Page
+        /// </summary>
+        [DefaultValue(AzureBlobType.Block)]
+        [DisplayName("Blob Type")]
+        public AzureBlobType BlobType { get; set; }
 
         /// <summary>
         ///     Set encoding manually. Empty value tries to get encoding set in Azure.

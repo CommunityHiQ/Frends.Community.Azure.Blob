@@ -10,6 +10,7 @@ using MimeMapping;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs.Specialized;
 
 #pragma warning disable CS1591
 
@@ -49,7 +50,7 @@ namespace Frends.Community.Azure.Blob
                 throw new Exception("Checking if container exists or creating new container caused an exception.", ex);
             }
 
-            var fileName = "";
+            string fileName;
             if (string.IsNullOrWhiteSpace(destinationProperties.RenameTo) && input.Compress)
             {
                 fileName = fi.Name + ".gz";
@@ -64,7 +65,16 @@ namespace Frends.Community.Azure.Blob
             }
 
             // return uri to uploaded blob and source file path
-            return await UploadBlockBlob(input, destinationProperties, fi, fileName, cancellationToken);
+
+            switch (destinationProperties.BlobType)
+            {
+                case AzureBlobType.Append:
+                    return await AppendBlob(input, destinationProperties, fi, fileName, cancellationToken);
+                case AzureBlobType.Page:
+                    return await UploadPageBlob(input, destinationProperties, fi, fileName, cancellationToken);
+                default:
+                    return await UploadBlockBlob(input, destinationProperties, fi, fileName, cancellationToken);
+            }
         }
 
         private static Encoding GetEncoding(string target)
@@ -128,6 +138,93 @@ namespace Frends.Community.Azure.Blob
             catch (Exception e)
             {
                 throw new Exception("UploadFileAsync: Error occured while uploading file to blob storage", e);
+            }
+
+            return new UploadOutput { SourceFile = input.SourceFile, Uri = blob.Uri.ToString() };
+        }
+
+        private static async Task<UploadOutput> AppendBlob(UploadInput input,
+            DestinationProperties destinationProperties,
+            FileInfo fi,
+            string fileName,
+            CancellationToken cancellationToken)
+        {
+
+            //if(fileName.Contains(Path.DirectorySeparatorChar)) fileName = fileName.Split(Path.DirectorySeparatorChar).Last();
+
+            // get the destination blob, rename if necessary
+            var blob = new AppendBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+
+            var encoding = GetEncoding(destinationProperties.FileEncoding);
+
+            // delete blob if user requested overwrite
+            if (destinationProperties.Overwrite)
+            {
+                await blob.DeleteIfExistsAsync(DeleteSnapshotsOption.None, null, cancellationToken);
+
+                var contentType = string.IsNullOrWhiteSpace(destinationProperties.ContentType)
+                ? MimeUtility.GetMimeMapping(fi.Name)
+                : destinationProperties.ContentType;
+
+                var uploadOptions = new AppendBlobCreateOptions
+                {
+                    HttpHeaders = new BlobHttpHeaders { ContentType = contentType, ContentEncoding = input.Compress ? "gzip" : encoding.WebName }
+                };
+
+                await blob.CreateAsync(uploadOptions, cancellationToken);
+            }
+
+            var progressHandler = new Progress<long>(progress =>
+            {
+                Console.WriteLine("Bytes uploaded: {0}", progress);
+            });
+
+            // begin and await for upload to complete
+            try
+            {
+                using (var stream = Utils.GetStream(false, true, encoding, fi))
+                {
+                    await blob.AppendBlockAsync(stream, null, null, progressHandler, cancellationToken);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Error occured while appending a block.", e);
+            }
+
+            return new UploadOutput { SourceFile = input.SourceFile, Uri = blob.Uri.ToString() };
+        }
+
+        private static async Task<UploadOutput> UploadPageBlob(UploadInput input,
+            DestinationProperties destinationProperties,
+            FileInfo fi,
+            string fileName,
+            CancellationToken cancellationToken)
+        {
+            // get the destination blob, rename if necessary
+            var blob = new PageBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+
+            var encoding = GetEncoding(destinationProperties.FileEncoding);
+
+            // delete blob if user requested overwrite
+            if (destinationProperties.Overwrite) await blob.DeleteIfExistsAsync(DeleteSnapshotsOption.None, null, cancellationToken);
+
+            var progressHandler = new Progress<long>(progress =>
+            {
+                Console.WriteLine("Bytes uploaded: {0}", progress);
+            });
+
+            // begin and await for upload to complete
+            try
+            {
+                using (var stream = Utils.GetStream(false, true, encoding, fi))
+                {
+                    await blob.UploadPagesAsync(stream, 512L, null, null, progressHandler, cancellationToken);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Error occured while uploading page blob", e);
             }
 
             return new UploadOutput { SourceFile = input.SourceFile, Uri = blob.Uri.ToString() };

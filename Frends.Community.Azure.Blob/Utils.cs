@@ -18,24 +18,7 @@ namespace Frends.Community.Azure.Blob
             return blobServiceClient.GetBlobContainerClient(containerName);
         }
 
-        /*public static BlobClient GetCloudBlobClient(string connectionString, string containerName, string blobName)
-        {
-            // Fetch Blob client
-            var blobClient = container.GetBlobClient(blobName);
-            switch (blobType)
-            {
-                case AzureBlobType.Append:
-                    return container.GetAppendBlobReference(blobName);
-                case AzureBlobType.Block:
-                    return container.GetBlockBlobReference(blobName);
-                case AzureBlobType.Page:
-                    return container.GetPageBlobReference(blobName);
-                default:
-                    return container.GetBlockBlobReference(blobName);
-            }
-        }*/
-
-        /*public static string GetRenamedFileName(string fileName, string directory)
+        public static string GetRenamedFileName(string fileName, string directory)
         {
             // if fileName is available, just return that
             if (!File.Exists(Path.Combine(directory, fileName)))
@@ -48,7 +31,7 @@ namespace Frends.Community.Azure.Blob
             while (File.Exists(Path.Combine(directory, $"{name}({index}){extension}"))) index++;
 
             return $"{name}({index}){extension}";
-        }*/
+        }
 
         /// <summary>
         ///     Gets correct stream object. Does not always dispose, so use using.

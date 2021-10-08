@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Azure.Storage.Blobs.Models;
 
 namespace Frends.Community.Azure.Blob.Tests
 {
@@ -13,7 +14,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         ///     Connection string for Azure Storage Emulator
         /// </summary>
-        private readonly string _connectionString = Environment.GetEnvironmentVariable("HIQ_AZUREBLOBSTORAGE_CONNSTRING");
+        private readonly string _connectionString = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ConnString");
 
         /// <summary>
         ///     Some random file for test purposes
@@ -36,7 +37,7 @@ namespace Frends.Community.Azure.Blob.Tests
         /// <summary>
         ///     Some random file for test purposes
         /// </summary>
-        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}{Path.DirectorySeparatorChar}TestFiles{Path.DirectorySeparatorChar}TestFile.xml";
+        private readonly string _testFilePath = $@"{AppDomain.CurrentDomain.BaseDirectory}\TestFiles\TestFile.xml";
 
         [TestInitialize]
         public async Task TestSetup()
@@ -53,7 +54,8 @@ namespace Frends.Community.Azure.Blob.Tests
                 ConnectionString = _connectionString,
                 BlobName = _testBlob,
                 BlobType = AzureBlobType.Block,
-                ContainerName = _containerName
+                ContainerName = _containerName,
+                Encoding = "utf-8"
             };
             _destination = new DestinationFileProperties
             {
@@ -66,15 +68,14 @@ namespace Frends.Community.Azure.Blob.Tests
             // setup test material for download tasks
 
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
-            var success = await container.CreateIfNotExistsAsync(_cancellationToken);
+            var success = await container.CreateIfNotExistsAsync(PublicAccessType.None, null, null, _cancellationToken);
 
-            if (!success)
-                throw new Exception("Could no create blob container");
+            if (success is null) throw new Exception("Could no create blob container");
 
             // Retrieve reference to a blob named "myblob".
-            var blockBlob = container.GetBlockBlobReference(_testBlob);
+            var blockBlob = container.GetBlobClient(_testBlob);
 
-            await blockBlob.UploadFromFileAsync(_testFilePath, _cancellationToken);
+            await blockBlob.UploadAsync(_testFilePath, _cancellationToken);
         }
 
         [TestCleanup]
@@ -82,7 +83,7 @@ namespace Frends.Community.Azure.Blob.Tests
         {
             // delete whole container after running tests
             var container = Utils.GetBlobContainer(_connectionString, _containerName);
-            await container.DeleteIfExistsAsync(_cancellationToken);
+            await container.DeleteIfExistsAsync(null, _cancellationToken);
 
             // delete test files and folders
             if (Directory.Exists(_destinationDirectory))
