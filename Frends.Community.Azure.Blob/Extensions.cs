@@ -4,7 +4,6 @@ using System.IO.Compression;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.WindowsAzure.Storage.Blob;
 
 #pragma warning disable CS1591
 
@@ -12,7 +11,7 @@ namespace Frends.Community.Azure.Blob
 {
     public static class Extensions
     {
-        public static Encoding ConvertToEncoding(this string value)
+        /*public static Encoding ConvertToEncoding(this string value)
         {
             try
             {
@@ -77,7 +76,7 @@ namespace Frends.Community.Azure.Blob
         {
             return cloudBlob?.Properties?.ContentEncoding != null &&
                    cloudBlob.Properties.ContentEncoding.Equals("gzip", StringComparison.InvariantCultureIgnoreCase);
-        }
+        }*/
 
         public static TEnum ConvertEnum<TEnum>(this Enum source)
         {

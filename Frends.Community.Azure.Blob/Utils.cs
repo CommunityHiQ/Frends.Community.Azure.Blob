@@ -1,8 +1,7 @@
 ﻿using System.IO;
 using System.IO.Compression;
 using System.Text;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Azure.Storage.Blobs;
 
 #pragma warning disable CS1591
 
@@ -10,30 +9,13 @@ namespace Frends.Community.Azure.Blob
 {
     public class Utils
     {
-        public static CloudBlobContainer GetBlobContainer(string connectionString, string containerName)
+        public static BlobContainerClient GetBlobContainer(string connectionString, string containerName)
         {
             // initialize azure account
-            var account = CloudStorageAccount.Parse(connectionString);
+            var blobServiceClient = new BlobServiceClient(connectionString);
 
-            // initialize blob client
-            var client = account.CreateCloudBlobClient();
-
-            return client.GetContainerReference(containerName);
-        }
-
-        public static CloudBlob GetCloudBlob(CloudBlobContainer container, string blobName, AzureBlobType blobType)
-        {
-            switch (blobType)
-            {
-                case AzureBlobType.Append:
-                    return container.GetAppendBlobReference(blobName);
-                case AzureBlobType.Block:
-                    return container.GetBlockBlobReference(blobName);
-                case AzureBlobType.Page:
-                    return container.GetPageBlobReference(blobName);
-                default:
-                    return container.GetBlockBlobReference(blobName);
-            }
+            // Fetch the container client
+            return blobServiceClient.GetBlobContainerClient(containerName);
         }
 
         public static string GetRenamedFileName(string fileName, string directory)

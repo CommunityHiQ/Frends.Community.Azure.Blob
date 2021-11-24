@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Azure;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 #pragma warning disable CS1591
 
@@ -13,53 +16,93 @@ namespace Frends.Community.Azure.Blob
         ///     List blobs in container. See See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
         /// </summary>
         /// <param name="source"></param>
-        /// <returns>Object { List&lt;Object&gt; { string Name, string Uri, string BlobType }}</returns>
-        public static ListBlobsOutput ListBlobs(ListSourceProperties source)
+        /// <returns>Object { List&lt;Object&gt; { string BlobType, string Uri, string Name, string ETag }}</returns>
+        public static async Task<ListBlobsOutput> ListBlobs(ListSourceProperties source)
         {
             var container = Utils.GetBlobContainer(source.ConnectionString, source.ContainerName);
-
-            var blobs = new List<BlobData>();
-
-            foreach (var item in container.ListBlobs(string.IsNullOrWhiteSpace(source.Prefix) ? null : source.Prefix,
-                source.FlatBlobListing))
+            if (source.FlatBlobListing)
             {
-                var blobType = item.GetType();
+                var enumerable = container.GetBlobsAsync(BlobTraits.None, BlobStates.None, string.IsNullOrWhiteSpace(source.Prefix) ? null : source.Prefix).AsPages();
+                var enumerator = enumerable.GetAsyncEnumerator();
+                return new ListBlobsOutput { Blobs = await ListBlobsFlat(enumerator, source) };
+            }
+            else
+            {
+                var enumerable = container.GetBlobsByHierarchyAsync(BlobTraits.None, BlobStates.None, "/", string.IsNullOrWhiteSpace(source.Prefix) ? null : source.Prefix).AsPages();
+                var enumerator = enumerable.GetAsyncEnumerator();
+                return new ListBlobsOutput { Blobs = await ListBlobsHierarchy(enumerator, source, container.Uri.ToString()) };
+            }
+        }
 
-                if (blobType == typeof(CloudBlockBlob))
+        private static async Task<List<BlobData>> ListBlobsFlat(IAsyncEnumerator<Page<BlobItem>> enumerator, ListSourceProperties source)
+        {
+            var blobs = new List<BlobData>();
+            try
+            {
+                while (await enumerator.MoveNextAsync())
                 {
-                    var blockBlob = (CloudBlockBlob) item;
-                    blobs.Add(new BlobData
+                    var blobItems = enumerator.Current;
+                    foreach (var blobItem in blobItems.Values)
                     {
-                        BlobType = "Block",
-                        Uri = blockBlob.Uri.ToString(),
-                        Name = blockBlob.Name,
-                        ETag = blockBlob.Properties.ETag
-                    });
-                }
-                else if (blobType == typeof(CloudPageBlob))
-                {
-                    var pageBlob = (CloudPageBlob) item;
-                    blobs.Add(new BlobData
-                    {
-                        BlobType = "Page",
-                        Uri = pageBlob.Uri.ToString(),
-                        Name = pageBlob.Name,
-                        ETag = pageBlob.Properties.ETag
-                    });
-                }
-                else if (blobType == typeof(CloudBlobDirectory))
-                {
-                    var directory = (CloudBlobDirectory) item;
-                    blobs.Add(new BlobData
-                    {
-                        BlobType = "Directory",
-                        Uri = directory.Uri.ToString(),
-                        Name = directory.Prefix
-                    });
+                        var blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Name);
+                        blobs.Add(new BlobData
+                        {
+                            BlobType = blobItem.Properties.BlobType.ToString(),
+                            Uri = blob.Uri.ToString(),
+                            Name = blob.Name,
+                            ETag = blobItem.Properties.ETag.ToString()
+                        });
+                    }
                 }
             }
+            finally
+            {
+                await enumerator.DisposeAsync();
+            }
 
-            return new ListBlobsOutput {Blobs = blobs};
+            return blobs;
+        }
+
+        private static async Task<List<BlobData>> ListBlobsHierarchy(IAsyncEnumerator<Page<BlobHierarchyItem>> enumerator, ListSourceProperties source, string uri)
+        {
+            var blobs = new List<BlobData>();
+            try
+            {
+                while (await enumerator.MoveNextAsync())
+                {
+                    var blobItems = enumerator.Current;
+                    foreach (var blobItem in blobItems.Values)
+                    {
+                        if (blobItem.IsBlob)
+                        {
+                            var blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Blob.Name);
+                            blobs.Add(new BlobData
+                            {
+                                BlobType = blobItem.Blob.Properties.BlobType.ToString(),
+                                Uri = blob.Uri.ToString(),
+                                Name = blob.Name,
+                                ETag = blobItem.Blob.Properties.ETag.ToString()
+                            });
+                        }
+                        else
+                        {
+                            blobs.Add(new BlobData
+                            {
+                                BlobType = "Directory",
+                                Uri = uri + "/" + blobItem.Prefix,
+                                Name = blobItem.Prefix,
+                                ETag = null
+                            });
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                await enumerator.DisposeAsync();
+            }
+
+            return blobs;
         }
     }
 

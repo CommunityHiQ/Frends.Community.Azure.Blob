@@ -3,8 +3,8 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 #pragma warning disable CS1591 
 
@@ -22,30 +22,24 @@ namespace Frends.Community.Azure.Blob
         public static async Task<DeleteOutput> DeleteBlobAsync(DeleteBlobProperties target,
             BlobConnectionProperties connectionProperties, CancellationToken cancellationToken)
         {
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
 
-            // get container
-            var container = Utils.GetBlobContainer(connectionProperties.ConnectionString,
-                connectionProperties.ContainerName);
+            // get Blob Client
+            var blob = new BlobClient(connectionProperties.ConnectionString, connectionProperties.ContainerName, target.BlobName);
 
             // check for interruptions
             cancellationToken.ThrowIfCancellationRequested();
-
-            // get the destination blob, rename if necessary
-            var blob = Utils.GetCloudBlob(container, target.BlobName, target.BlobType);
 
             if (!await blob.ExistsAsync(cancellationToken)) return new DeleteOutput {Success = true};
 
             try
             {
                 var accessCondition = string.IsNullOrWhiteSpace(target.VerifyETagWhenDeleting)
-                    ? AccessCondition.GenerateIfMatchCondition(target.VerifyETagWhenDeleting)
-                    : AccessCondition.GenerateEmptyCondition();
+                    ? new BlobRequestConditions { IfMatch = new global::Azure.ETag(target.VerifyETagWhenDeleting) }
+                    : null;
 
                 var result = await blob.DeleteIfExistsAsync(
                     target.SnapshotDeleteOption.ConvertEnum<DeleteSnapshotsOption>(), accessCondition,
-                    new BlobRequestOptions(), new OperationContext(), cancellationToken);
+                    cancellationToken);
 
                 return new DeleteOutput {Success = result};
             }
@@ -76,7 +70,7 @@ namespace Frends.Community.Azure.Blob
             // delete container
             try
             {
-                var result = await container.DeleteIfExistsAsync(cancellationToken);
+                var result = await container.DeleteIfExistsAsync(null, cancellationToken);
                 return new DeleteOutput {Success = result};
             }
             catch (Exception e)
@@ -154,13 +148,6 @@ namespace Frends.Community.Azure.Blob
         [DefaultValue("0x9FE13BAA323E5A4")]
         [DisplayFormat(DataFormatString = "Text")]
         public string VerifyETagWhenDeleting { get; set; }
-
-        /// <summary>
-        ///     Type of blob to delete: Append, Block or Page
-        /// </summary>
-        [DisplayName("Blob Type")]
-        [DefaultValue(AzureBlobType.Block)]
-        public AzureBlobType BlobType { get; set; }
 
         /// <summary>
         ///     What should be done with blob snapshots?
