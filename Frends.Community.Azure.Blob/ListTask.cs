@@ -5,6 +5,9 @@ using System.ComponentModel.DataAnnotations;
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using System.Threading;
+using Azure.Identity;
+using System;
 
 #pragma warning disable CS1591
 
@@ -16,25 +19,32 @@ namespace Frends.Community.Azure.Blob
         ///     List blobs in container. See See https://github.com/CommunityHiQ/Frends.Community.Azure.Blob
         /// </summary>
         /// <param name="source"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns>Object { List&lt;Object&gt; { string BlobType, string Uri, string Name, string ETag }}</returns>
-        public static async Task<ListBlobsOutput> ListBlobs(ListSourceProperties source)
+        public static async Task<ListBlobsOutput> ListBlobs([PropertyTab]ListSourceProperties source, CancellationToken cancellationToken)
         {
-            var container = Utils.GetBlobContainer(source.ConnectionString, source.ContainerName);
+            BlobContainerClient container;
+
+            if (source.ConnectionMethod == ConnectionMethod.ConnectionString)
+                container = Utils.GetBlobContainer(source.ConnectionString, source.ContainerName);
+            else
+                container = Utils.GetBlobContainer(source.ApplicationID, source.TenantID, source.ClientSecret, source.StorageAccountName, source.ContainerName);
+
             if (source.FlatBlobListing)
             {
-                var enumerable = container.GetBlobsAsync(BlobTraits.None, BlobStates.None, string.IsNullOrWhiteSpace(source.Prefix) ? null : source.Prefix).AsPages();
-                var enumerator = enumerable.GetAsyncEnumerator();
-                return new ListBlobsOutput { Blobs = await ListBlobsFlat(enumerator, source) };
+                var enumerable = container.GetBlobsAsync(BlobTraits.None, BlobStates.None, string.IsNullOrWhiteSpace(source.Prefix) ? null : source.Prefix, cancellationToken).AsPages();
+                var enumerator = enumerable.GetAsyncEnumerator(cancellationToken);
+                return new ListBlobsOutput { Blobs = await ListBlobsFlat(enumerator, source, cancellationToken) };
             }
             else
             {
-                var enumerable = container.GetBlobsByHierarchyAsync(BlobTraits.None, BlobStates.None, "/", string.IsNullOrWhiteSpace(source.Prefix) ? null : source.Prefix).AsPages();
-                var enumerator = enumerable.GetAsyncEnumerator();
-                return new ListBlobsOutput { Blobs = await ListBlobsHierarchy(enumerator, source, container.Uri.ToString()) };
+                var enumerable = container.GetBlobsByHierarchyAsync(BlobTraits.None, BlobStates.None, "/", string.IsNullOrWhiteSpace(source.Prefix) ? null : source.Prefix, cancellationToken).AsPages();
+                var enumerator = enumerable.GetAsyncEnumerator(cancellationToken);
+                return new ListBlobsOutput { Blobs = await ListBlobsHierarchy(enumerator, source, container.Uri.ToString(), cancellationToken) };
             }
         }
 
-        private static async Task<List<BlobData>> ListBlobsFlat(IAsyncEnumerator<Page<BlobItem>> enumerator, ListSourceProperties source)
+        private static async Task<List<BlobData>> ListBlobsFlat(IAsyncEnumerator<Page<BlobItem>> enumerator, ListSourceProperties source, CancellationToken cancellationToken)
         {
             var blobs = new List<BlobData>();
             try
@@ -44,7 +54,18 @@ namespace Frends.Community.Azure.Blob
                     var blobItems = enumerator.Current;
                     foreach (var blobItem in blobItems.Values)
                     {
-                        var blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Name);
+                        cancellationToken.ThrowIfCancellationRequested();
+                        BlobClient blob;
+
+                        if (source.ConnectionMethod == ConnectionMethod.ConnectionString)
+                            blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Name);
+                        else
+                        {
+                            var credentials = new ClientSecretCredential(source.TenantID, source.ApplicationID, source.ClientSecret, new ClientSecretCredentialOptions());
+                            var url = new Uri($"https://{source.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{blobItem.Name}");
+                            blob = new BlobClient(url, credentials);
+                        }
+
                         blobs.Add(new BlobData
                         {
                             BlobType = blobItem.Properties.BlobType.ToString(),
@@ -63,7 +84,7 @@ namespace Frends.Community.Azure.Blob
             return blobs;
         }
 
-        private static async Task<List<BlobData>> ListBlobsHierarchy(IAsyncEnumerator<Page<BlobHierarchyItem>> enumerator, ListSourceProperties source, string uri)
+        private static async Task<List<BlobData>> ListBlobsHierarchy(IAsyncEnumerator<Page<BlobHierarchyItem>> enumerator, ListSourceProperties source, string uri, CancellationToken cancellationToken)
         {
             var blobs = new List<BlobData>();
             try
@@ -73,9 +94,20 @@ namespace Frends.Community.Azure.Blob
                     var blobItems = enumerator.Current;
                     foreach (var blobItem in blobItems.Values)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         if (blobItem.IsBlob)
                         {
-                            var blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Blob.Name);
+                            BlobClient blob;
+
+                            if (source.ConnectionMethod == ConnectionMethod.ConnectionString)
+                                blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Blob.Name);
+                            else
+                            {
+                                var credentials = new ClientSecretCredential(source.TenantID, source.ApplicationID, source.ClientSecret, new ClientSecretCredentialOptions());
+                                var url = new Uri($"https://{source.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{blobItem.Blob.Name}");
+                                blob = new BlobClient(url, credentials);
+                            }
+
                             blobs.Add(new BlobData
                             {
                                 BlobType = blobItem.Blob.Properties.BlobType.ToString(),
@@ -109,11 +141,48 @@ namespace Frends.Community.Azure.Blob
     public class ListSourceProperties
     {
         /// <summary>
+        ///     Which connection method should be used for connecting to Azure Blob Storage?
+        /// </summary>
+        [DefaultValue(ConnectionMethod.ConnectionString)]
+        public ConnectionMethod ConnectionMethod { get; set; }
+
+        /// <summary>
         ///     Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
         public string ConnectionString { get; set; }
+
+        /// <summary>
+        ///     Application (Client) ID of Azure AD Application.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [DisplayName("Application ID")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string ApplicationID { get; set; }
+
+        /// <summary>
+        ///     Tenant ID of Azure Tenant.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [DisplayName("Tenant ID")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string TenantID { get; set; }
+
+        /// <summary>
+        ///     Client Secret of Azure AD Application.
+        /// </summary>
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        [PasswordPropertyText]
+        public string ClientSecret { get; set; }
+
+        /// <summary>
+        ///     Name of the storage account.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string StorageAccountName { get; set; }
 
         /// <summary>
         ///     Name of the azure blob storage container where the file is downloaded from.

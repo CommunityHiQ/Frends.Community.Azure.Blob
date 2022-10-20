@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
@@ -19,15 +20,19 @@ namespace Frends.Community.Azure.Blob
         /// <param name="connectionProperties"></param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Object { bool Success }</returns>
-        public static async Task<DeleteOutput> DeleteBlobAsync(DeleteBlobProperties target,
-            BlobConnectionProperties connectionProperties, CancellationToken cancellationToken)
+        public static async Task<DeleteOutput> DeleteBlobAsync([PropertyTab]DeleteBlobProperties target,
+            [PropertyTab]BlobConnectionProperties connectionProperties, CancellationToken cancellationToken)
         {
+            BlobClient blob;
 
-            // get Blob Client
-            var blob = new BlobClient(connectionProperties.ConnectionString, connectionProperties.ContainerName, target.BlobName);
-
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
+            if (connectionProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
+                blob = new BlobClient(connectionProperties.ConnectionString, connectionProperties.ContainerName, target.BlobName);
+            else
+            {
+                var credentials = new ClientSecretCredential(connectionProperties.TenantID, connectionProperties.ApplicationID, connectionProperties.ClientSecret, new ClientSecretCredentialOptions());
+                var url = new Uri($"https://{connectionProperties.StorageAccountName}.blob.core.windows.net/{connectionProperties.ContainerName}/{target.BlobName}");
+                blob = new BlobClient(url, credentials);
+            }
 
             if (!await blob.ExistsAsync(cancellationToken)) return new DeleteOutput {Success = true};
 
@@ -56,14 +61,15 @@ namespace Frends.Community.Azure.Blob
         /// <param name="connectionProperties"></param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Object { bool Success }</returns>
-        public static async Task<DeleteOutput> DeleteContainerAsync(DeleteContainerProperties target,
-            ContainerConnectionProperties connectionProperties, CancellationToken cancellationToken)
+        public static async Task<DeleteOutput> DeleteContainerAsync([PropertyTab]DeleteContainerProperties target,
+            [PropertyTab]ContainerConnectionProperties connectionProperties, CancellationToken cancellationToken)
         {
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
+            BlobContainerClient container;
 
-            // get container
-            var container = Utils.GetBlobContainer(connectionProperties.ConnectionString, target.ContainerName);
+            if (connectionProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
+                container = Utils.GetBlobContainer(connectionProperties.ConnectionString, target.ContainerName);
+            else
+                container = Utils.GetBlobContainer(connectionProperties.ApplicationID, connectionProperties.TenantID, connectionProperties.ClientSecret, connectionProperties.StorageAccountName, target.ContainerName);
 
             if (!await container.ExistsAsync(cancellationToken)) return new DeleteOutput {Success = true};
 
@@ -104,23 +110,74 @@ namespace Frends.Community.Azure.Blob
     public class ContainerConnectionProperties
     {
         /// <summary>
-        ///     Connection string to Azure storage
+        ///     Which connection method should be used for connecting to Azure Blob Storage?
         /// </summary>
-        [DefaultValue("UseDevelopmentStorage=true")]
-        [DisplayName("Connection String")]
-        [DisplayFormat(DataFormatString = "Text")]
-        public string ConnectionString { get; set; }
-    }
+        [DefaultValue(ConnectionMethod.ConnectionString)]
+        public ConnectionMethod ConnectionMethod { get; set; }
 
-    public class BlobConnectionProperties
-    {
         /// <summary>
         ///     Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
         [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
         public string ConnectionString { get; set; }
+
+        /// <summary>
+        ///     Name of the storage account.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string StorageAccountName { get; set; }
+
+        /// <summary>
+        ///     Application (Client) ID of Azure AD Application.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [DisplayName("Application ID")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string ApplicationID { get; set; }
+
+        /// <summary>
+        ///     Tenant ID of Azure Tenant.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [DisplayName("Tenant ID")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string TenantID { get; set; }
+
+        /// <summary>
+        ///     Client Secret of Azure AD Application.
+        /// </summary>
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        [PasswordPropertyText]
+        public string ClientSecret { get; set; }
+    }
+
+    public class BlobConnectionProperties
+    {
+        /// <summary>
+        ///     Which connection method should be used for connecting to Azure Blob Storage?
+        /// </summary>
+        [DefaultValue(ConnectionMethod.ConnectionString)]
+        public ConnectionMethod ConnectionMethod { get; set; }
+
+        /// <summary>
+        ///     Connection string to Azure storage
+        /// </summary>
+        [DefaultValue("UseDevelopmentStorage=true")]
+        [DisplayName("Connection String")]
+        [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
+        public string ConnectionString { get; set; }
+
+        /// <summary>
+        ///     Name of the storage account.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string StorageAccountName { get; set; }
 
         /// <summary>
         ///     Name of the container where delete blob exists.
@@ -129,6 +186,29 @@ namespace Frends.Community.Azure.Blob
         [DefaultValue("test-container")]
         [DisplayFormat(DataFormatString = "Text")]
         public string ContainerName { get; set; }
+
+        /// <summary>
+        ///     Application (Client) ID of Azure AD Application.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [DisplayName("Application ID")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string ApplicationID { get; set; }
+
+        /// <summary>
+        ///     Tenant ID of Azure Tenant.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [DisplayName("Tenant ID")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string TenantID { get; set; }
+
+        /// <summary>
+        ///     Client Secret of Azure AD Application.
+        /// </summary>
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        [PasswordPropertyText]
+        public string ClientSecret { get; set; }
     }
 
     public class DeleteBlobProperties

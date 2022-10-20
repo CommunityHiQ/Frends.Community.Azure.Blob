@@ -5,12 +5,12 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text;
-using System.Linq;
 using MimeMapping;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
+using Azure.Identity;
 
 #pragma warning disable CS1591
 
@@ -23,23 +23,21 @@ namespace Frends.Community.Azure.Blob
         ///     Will create given container on connection if necessary.
         /// </summary>
         /// <returns>Object { string Uri, string SourceFile }</returns>
-        public static async Task<UploadOutput> UploadFileAsync(UploadInput input,
-            DestinationProperties destinationProperties, CancellationToken cancellationToken)
+        public static async Task<UploadOutput> UploadFileAsync([PropertyTab]UploadInput input,
+            [PropertyTab]DestinationProperties destinationProperties, CancellationToken cancellationToken)
         {
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
-
             // check that source file exists
             var fi = new FileInfo(input.SourceFile);
             if (!fi.Exists)
                 throw new ArgumentException($"Source file {input.SourceFile} does not exist", nameof(input.SourceFile));
 
-            // get container
-            var container = Utils.GetBlobContainer(destinationProperties.ConnectionString,
-                destinationProperties.ContainerName);
+            BlobContainerClient container;
 
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
+            if (destinationProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
+                container = Utils.GetBlobContainer(destinationProperties.ConnectionString, destinationProperties.ContainerName);
+            else
+                container = Utils.GetBlobContainer(destinationProperties.ApplicationID, destinationProperties.TenantID, destinationProperties.ClientSecret, destinationProperties.StorageAccountName, destinationProperties.ContainerName);
+
             try
             {
                 if (destinationProperties.CreateContainerIfItDoesNotExist)
@@ -52,17 +50,11 @@ namespace Frends.Community.Azure.Blob
 
             string fileName;
             if (string.IsNullOrWhiteSpace(destinationProperties.RenameTo) && input.Compress)
-            {
                 fileName = fi.Name + ".gz";
-            }
             else if (string.IsNullOrWhiteSpace(destinationProperties.RenameTo))
-            {
                 fileName = fi.Name;
-            }
             else
-            {
                 fileName = destinationProperties.RenameTo;
-            }
 
             // return uri to uploaded blob and source file path
 
@@ -102,8 +94,16 @@ namespace Frends.Community.Azure.Blob
             string fileName,
             CancellationToken cancellationToken)
         {
-            // get the destination blob, rename if necessary
-            var blob = new BlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+            BlobClient blob;
+
+            if (destinationProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
+                blob = new BlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+            else
+            {
+                var credentials = new ClientSecretCredential(destinationProperties.TenantID, destinationProperties.ApplicationID, destinationProperties.ClientSecret, new ClientSecretCredentialOptions());
+                var url = new Uri($"https://{destinationProperties.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
+                blob = new BlobClient(url, credentials);
+            }
 
             var contentType = string.IsNullOrWhiteSpace(destinationProperties.ContentType)
                 ? MimeUtility.GetMimeMapping(fi.Name)
@@ -149,11 +149,16 @@ namespace Frends.Community.Azure.Blob
             string fileName,
             CancellationToken cancellationToken)
         {
+            AppendBlobClient blob;
 
-            //if(fileName.Contains(Path.DirectorySeparatorChar)) fileName = fileName.Split(Path.DirectorySeparatorChar).Last();
-
-            // get the destination blob, rename if necessary
-            var blob = new AppendBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+            if (destinationProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
+                blob = new AppendBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+            else
+            {
+                var credentials = new ClientSecretCredential(destinationProperties.TenantID, destinationProperties.ApplicationID, destinationProperties.ClientSecret, new ClientSecretCredentialOptions());
+                var url = new Uri($"https://{destinationProperties.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
+                blob = new AppendBlobClient(url, credentials);
+            }
 
             var encoding = GetEncoding(destinationProperties.FileEncoding);
 
@@ -201,8 +206,16 @@ namespace Frends.Community.Azure.Blob
             string fileName,
             CancellationToken cancellationToken)
         {
-            // get the destination blob, rename if necessary
-            var blob = new PageBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+            PageBlobClient blob;
+
+            if (destinationProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
+                blob = new PageBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+            else
+            {
+                var credentials = new ClientSecretCredential(destinationProperties.TenantID, destinationProperties.ApplicationID, destinationProperties.ClientSecret, new ClientSecretCredentialOptions());
+                var url = new Uri($"https://{destinationProperties.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
+                blob = new PageBlobClient(url, credentials);
+            }
 
             var encoding = GetEncoding(destinationProperties.FileEncoding);
 
@@ -240,12 +253,49 @@ namespace Frends.Community.Azure.Blob
     public class DestinationProperties
     {
         /// <summary>
+        ///     Which connection method should be used for connecting to Azure Blob Storage?
+        /// </summary>
+        [DefaultValue(ConnectionMethod.ConnectionString)]
+        public ConnectionMethod ConnectionMethod { get; set; }
+
+        /// <summary>
         ///     Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
         [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
         public string ConnectionString { get; set; }
+
+        /// <summary>
+        ///     Application (Client) ID of Azure AD Application.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [DisplayName("Application ID")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string ApplicationID { get; set; }
+
+        /// <summary>
+        ///     Tenant ID of Azure Tenant.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [DisplayName("Tenant ID")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string TenantID { get; set; }
+
+        /// <summary>
+        ///     Client Secret of Azure AD Application.
+        /// </summary>
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        [PasswordPropertyText]
+        public string ClientSecret { get; set; }
+
+        /// <summary>
+        ///     Name of the storage account.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
+        public string StorageAccountName { get; set; }
 
         /// <summary>
         ///     Name of the azure blob storage container where the data will be uploaded.

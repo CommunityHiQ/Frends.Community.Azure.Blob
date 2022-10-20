@@ -9,72 +9,122 @@ namespace Frends.Community.Azure.Blob.Tests
     public class DeleteTest
     {
         /// <summary>
-        ///     Connection string for Azure Storage Emulator
+        ///     Connection string for Azure Storage Account.
         /// </summary>
         private readonly string _connectionString = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ConnString");
-
-        /// <summary>
-        ///     Container name for tests
-        /// </summary>
-        private readonly string _containerName = "test-container";
-
-        [TestCleanup]
-        public async Task Cleanup()
-        {
-            // delete whole container after running tests
-            var container = Utils.GetBlobContainer(_connectionString, _containerName);
-            await container.DeleteIfExistsAsync();
-        }
+        private readonly string _appID = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_AppID");
+        private readonly string _tenantID = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_TenantID");
+        private readonly string _clientSecret = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ClientSecret");
+        private readonly string _storageAccount = "testsorage01";
 
         [TestMethod]
         public async Task DeleteBlobAsync_ShouldReturnTrueWithNonexistingBlob()
         {
+            var containerName = "test1";
+
             var input = new DeleteBlobProperties
             {
                 BlobName = Guid.NewGuid().ToString()
             };
             var connection = new BlobConnectionProperties
             {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
                 ConnectionString = _connectionString,
-                ContainerName = _containerName
+                ContainerName = containerName
             };
-            var container = Utils.GetBlobContainer(_connectionString, _containerName);
+            var container = Utils.GetBlobContainer(_connectionString, containerName);
             await container.CreateIfNotExistsAsync();
 
             var result = await DeleteTask.DeleteBlobAsync(input, connection, new CancellationToken());
 
             Assert.IsTrue(result.Success, "DeleteBlob should've returned true when trying to delete non existing blob");
+            await DeleteContainer(containerName);
         }
 
         [TestMethod]
         public async Task DeleteBlobAsync_ShouldReturnTrueWithNonexistingContainer()
         {
+            var containerName = "test2";
+
             var input = new DeleteBlobProperties
             {
                 BlobName = Guid.NewGuid().ToString()
             };
             var options = new BlobConnectionProperties
             {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
                 ConnectionString = _connectionString,
-                ContainerName = Guid.NewGuid().ToString()
+                ContainerName = containerName
             };
 
             var result = await DeleteTask.DeleteBlobAsync(input, options, new CancellationToken());
 
             Assert.IsTrue(result.Success,
                 "DeleteBlob should've returned true when trying to delete blob in non existing container");
+            await DeleteContainer(containerName);
+        }
+
+        [TestMethod]
+        public async Task DeleteBlobAsync_AccessTokenAuthenticationTest()
+        {
+            var containerName = "test3";
+            var input = new DeleteBlobProperties
+            {
+                BlobName = Guid.NewGuid().ToString()
+            };
+            var connection = new BlobConnectionProperties
+            {
+                ConnectionMethod = ConnectionMethod.AccessToken,
+                ContainerName = containerName,
+                StorageAccountName = _storageAccount,
+                ApplicationID = _appID,
+                TenantID = _tenantID,
+                ClientSecret = _clientSecret
+            };
+            var container = Utils.GetBlobContainer(_connectionString, containerName);
+            await container.CreateIfNotExistsAsync();
+
+            var result = await DeleteTask.DeleteBlobAsync(input, connection, new CancellationToken());
+
+            Assert.IsTrue(result.Success, "DeleteBlob should've returned true when trying to delete non existing blob");
+            await DeleteContainer(containerName);
         }
 
         [TestMethod]
         public async Task DeleteContainerAsync_ShouldReturnTrueWithNonexistingContainer()
         {
             var inputProperties = new DeleteContainerProperties {ContainerName = Guid.NewGuid().ToString()};
-            var connection = new ContainerConnectionProperties {ConnectionString = _connectionString};
+            var connection = new ContainerConnectionProperties {ConnectionMethod = ConnectionMethod.ConnectionString, ConnectionString = _connectionString};
 
             var result = await DeleteTask.DeleteContainerAsync(inputProperties, connection, new CancellationToken());
 
             Assert.IsTrue(result.Success,
                 "DeleteContainer should've returned true when trying to delete non existing container");
+        }
+
+        [TestMethod]
+        public async Task DeleteContainerAsync_AccessTokenAuthenticationTest()
+        {
+            var inputProperties = new DeleteContainerProperties { ContainerName = Guid.NewGuid().ToString() };
+            var connection = new ContainerConnectionProperties
+            { 
+                ConnectionMethod = ConnectionMethod.AccessToken,
+                StorageAccountName = _storageAccount,
+                ApplicationID = _appID,
+                TenantID = _tenantID,
+                ClientSecret = _clientSecret
+            };
+
+            var result = await DeleteTask.DeleteContainerAsync(inputProperties, connection, new CancellationToken());
+
+            Assert.IsTrue(result.Success,
+                "DeleteContainer should've returned true when trying to delete non existing container");
+        }
+
+        private async Task DeleteContainer(string containerName)
+        {
+            var container = Utils.GetBlobContainer(_connectionString, containerName);
+            await container.DeleteIfExistsAsync();
         }
     }
 }

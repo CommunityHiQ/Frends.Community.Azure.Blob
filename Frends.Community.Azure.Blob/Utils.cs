@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.Compression;
 using System.Text;
+using Azure.Identity;
 using Azure.Storage.Blobs;
 
 #pragma warning disable CS1591
@@ -13,6 +15,17 @@ namespace Frends.Community.Azure.Blob
         {
             // initialize azure account
             var blobServiceClient = new BlobServiceClient(connectionString);
+
+            // Fetch the container client
+            return blobServiceClient.GetBlobContainerClient(containerName);
+        }
+
+        public static BlobContainerClient GetBlobContainer(string appID, string tenantID, string clientSecret, string storageAccount, string containerName)
+        {
+            var credentials = new ClientSecretCredential(tenantID, appID, clientSecret, new ClientSecretCredentialOptions());
+
+            // initialize azure account
+            var blobServiceClient = new BlobServiceClient(new Uri($"https://{storageAccount}.blob.core.windows.net"), credentials);
 
             // Fetch the container client
             return blobServiceClient.GetBlobContainerClient(containerName);

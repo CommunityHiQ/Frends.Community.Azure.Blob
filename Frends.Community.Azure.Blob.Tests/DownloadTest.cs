@@ -12,9 +12,13 @@ namespace Frends.Community.Azure.Blob.Tests
     public class DownloadTest
     {
         /// <summary>
-        ///     Connection string for Azure Storage Emulator
+        ///     Connection string for Azure Storage Account.
         /// </summary>
         private readonly string _connectionString = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ConnString");
+        private readonly string _appID = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_AppID");
+        private readonly string _tenantID = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_TenantID");
+        private readonly string _clientSecret = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ClientSecret");
+        private readonly string _storageAccount = "testsorage01";
 
         /// <summary>
         ///     Some random file for test purposes
@@ -51,6 +55,7 @@ namespace Frends.Community.Azure.Blob.Tests
             // task properties
             _source = new SourceProperties
             {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
                 ConnectionString = _connectionString,
                 BlobName = _testBlob,
                 BlobType = AzureBlobType.Block,
@@ -99,6 +104,27 @@ namespace Frends.Community.Azure.Blob.Tests
         }
 
         [TestMethod]
+        public async Task ReadBlobContentAsync_AccessTokenAuthenticationTest()
+        {
+            var source = new SourceProperties
+            {
+                ConnectionMethod = ConnectionMethod.AccessToken,
+                StorageAccountName = _storageAccount,
+                ApplicationID = _appID,
+                TenantID = _tenantID,
+                ClientSecret = _clientSecret,
+                BlobName = _testBlob,
+                BlobType = AzureBlobType.Block,
+                ContainerName = _containerName,
+                Encoding = "utf-8"
+            };
+
+            var result = await DownloadTask.ReadBlobContentAsync(source, _cancellationToken);
+
+            Assert.IsTrue(result.Content.Contains(@"<input>WhatHasBeenSeenCannotBeUnseen</input>"));
+        }
+
+        [TestMethod]
         public async Task DownloadBlobAsync_WritesBlobToFile()
         {
             var result = await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
@@ -140,6 +166,29 @@ namespace Frends.Community.Azure.Blob.Tests
 
             // only one file should exist in destination folder
             Assert.AreEqual(1, Directory.GetFiles(_destinationDirectory).Length);
+        }
+
+        [TestMethod]
+        public async Task DownloadBlobAsync_AccessTokenAuthenticationTest()
+        {
+            var source = new SourceProperties
+            {
+                ConnectionMethod = ConnectionMethod.AccessToken,
+                StorageAccountName = _storageAccount,
+                ApplicationID = _appID,
+                TenantID = _tenantID,
+                ClientSecret = _clientSecret,
+                BlobName = _testBlob,
+                BlobType = AzureBlobType.Block,
+                ContainerName = _containerName,
+                Encoding = "utf-8"
+            };
+
+            var result = await DownloadTask.DownloadBlobAsync(source, _destination, _cancellationToken);
+
+            Assert.IsTrue(File.Exists(result.FullPath));
+            var fileContent = File.ReadAllText(result.FullPath);
+            Assert.IsTrue(fileContent.Contains(@"<input>WhatHasBeenSeenCannotBeUnseen</input>"));
         }
     }
 }
