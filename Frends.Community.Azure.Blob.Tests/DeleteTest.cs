@@ -20,7 +20,7 @@ namespace Frends.Community.Azure.Blob.Tests
         [TestMethod]
         public async Task DeleteBlobAsync_ShouldReturnTrueWithNonexistingBlob()
         {
-            var containerName = "test1";
+            var containerName = "test" + Guid.NewGuid().ToString();
 
             var input = new DeleteBlobProperties
             {
@@ -44,7 +44,7 @@ namespace Frends.Community.Azure.Blob.Tests
         [TestMethod]
         public async Task DeleteBlobAsync_ShouldReturnTrueWithNonexistingContainer()
         {
-            var containerName = "test2";
+            var containerName = "test" + Guid.NewGuid().ToString();
 
             var input = new DeleteBlobProperties
             {
@@ -67,19 +67,23 @@ namespace Frends.Community.Azure.Blob.Tests
         [TestMethod]
         public async Task DeleteBlobAsync_AccessTokenAuthenticationTest()
         {
-            var containerName = "test3";
+            var containerName = "test" + Guid.NewGuid().ToString();
             var input = new DeleteBlobProperties
             {
                 BlobName = Guid.NewGuid().ToString()
             };
-            var connection = new BlobConnectionProperties
+            var oauth = new OAuthConnection
             {
-                ConnectionMethod = ConnectionMethod.AccessToken,
-                ContainerName = containerName,
                 StorageAccountName = _storageAccount,
                 ApplicationID = _appID,
                 TenantID = _tenantID,
                 ClientSecret = _clientSecret
+            };
+            var connection = new BlobConnectionProperties
+            {
+                ConnectionMethod = ConnectionMethod.OAuth2,
+                ContainerName = containerName,
+                Connection = oauth
             };
             var container = Utils.GetBlobContainer(_connectionString, containerName);
             await container.CreateIfNotExistsAsync();
@@ -106,13 +110,17 @@ namespace Frends.Community.Azure.Blob.Tests
         public async Task DeleteContainerAsync_AccessTokenAuthenticationTest()
         {
             var inputProperties = new DeleteContainerProperties { ContainerName = Guid.NewGuid().ToString() };
-            var connection = new ContainerConnectionProperties
-            { 
-                ConnectionMethod = ConnectionMethod.AccessToken,
+            var oauth = new OAuthConnection
+            {
                 StorageAccountName = _storageAccount,
                 ApplicationID = _appID,
                 TenantID = _tenantID,
                 ClientSecret = _clientSecret
+            };
+            var connection = new ContainerConnectionProperties
+            { 
+                ConnectionMethod = ConnectionMethod.OAuth2,
+                Connection = oauth
             };
 
             var result = await DeleteTask.DeleteContainerAsync(inputProperties, connection, new CancellationToken());

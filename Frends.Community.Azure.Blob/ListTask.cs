@@ -28,7 +28,7 @@ namespace Frends.Community.Azure.Blob
             if (source.ConnectionMethod == ConnectionMethod.ConnectionString)
                 container = Utils.GetBlobContainer(source.ConnectionString, source.ContainerName);
             else
-                container = Utils.GetBlobContainer(source.ApplicationID, source.TenantID, source.ClientSecret, source.StorageAccountName, source.ContainerName);
+                container = Utils.GetBlobContainer(source.Connection.ApplicationID, source.Connection.TenantID, source.Connection.ClientSecret, source.Connection.StorageAccountName, source.ContainerName);
 
             if (source.FlatBlobListing)
             {
@@ -61,8 +61,8 @@ namespace Frends.Community.Azure.Blob
                             blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Name);
                         else
                         {
-                            var credentials = new ClientSecretCredential(source.TenantID, source.ApplicationID, source.ClientSecret, new ClientSecretCredentialOptions());
-                            var url = new Uri($"https://{source.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{blobItem.Name}");
+                            var credentials = new ClientSecretCredential(source.Connection.TenantID, source.Connection.ApplicationID, source.Connection.ClientSecret, new ClientSecretCredentialOptions());
+                            var url = new Uri($"https://{source.Connection.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{blobItem.Name}");
                             blob = new BlobClient(url, credentials);
                         }
 
@@ -103,8 +103,8 @@ namespace Frends.Community.Azure.Blob
                                 blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Blob.Name);
                             else
                             {
-                                var credentials = new ClientSecretCredential(source.TenantID, source.ApplicationID, source.ClientSecret, new ClientSecretCredentialOptions());
-                                var url = new Uri($"https://{source.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{blobItem.Blob.Name}");
+                                var credentials = new ClientSecretCredential(source.Connection.TenantID, source.Connection.ApplicationID, source.Connection.ClientSecret, new ClientSecretCredentialOptions());
+                                var url = new Uri($"https://{source.Connection.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{blobItem.Blob.Name}");
                                 blob = new BlobClient(url, credentials);
                             }
 
@@ -155,34 +155,10 @@ namespace Frends.Community.Azure.Blob
         public string ConnectionString { get; set; }
 
         /// <summary>
-        ///     Application (Client) ID of Azure AD Application.
+        ///     OAuth2 connection information.
         /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [DisplayName("Application ID")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string ApplicationID { get; set; }
-
-        /// <summary>
-        ///     Tenant ID of Azure Tenant.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [DisplayName("Tenant ID")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string TenantID { get; set; }
-
-        /// <summary>
-        ///     Client Secret of Azure AD Application.
-        /// </summary>
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        [PasswordPropertyText]
-        public string ClientSecret { get; set; }
-
-        /// <summary>
-        ///     Name of the storage account.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string StorageAccountName { get; set; }
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.OAuth2)]
+        public OAuthConnection Connection { get; set; }
 
         /// <summary>
         ///     Name of the azure blob storage container where the file is downloaded from.

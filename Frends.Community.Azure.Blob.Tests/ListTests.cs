@@ -92,13 +92,17 @@ namespace Frends.Community.Azure.Blob.Tests
         [TestMethod]
         public async Task ListBlobs_AccessTokenAuthenticationTest()
         {
-            var sourceProperties = new ListSourceProperties
+            var oauth = new OAuthConnection
             {
-                ConnectionMethod = ConnectionMethod.AccessToken,
                 ApplicationID = _appID,
                 TenantID = _tenantID,
                 ClientSecret = _clientSecret,
-                StorageAccountName = _storageAccount,
+                StorageAccountName = _storageAccount
+            };
+            var sourceProperties = new ListSourceProperties
+            {
+                ConnectionMethod = ConnectionMethod.OAuth2,
+                Connection = oauth,
                 ContainerName = _containerName,
                 FlatBlobListing = false
             };

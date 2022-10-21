@@ -38,6 +38,8 @@ namespace Frends.Community.Azure.Blob.Tests
 
         private SourceProperties _source;
 
+        private OAuthConnection _oauth;
+
         /// <summary>
         ///     Some random file for test purposes
         /// </summary>
@@ -68,6 +70,13 @@ namespace Frends.Community.Azure.Blob.Tests
                 FileExistsOperation = FileExistsAction.Overwrite
             };
             _cancellationToken = new CancellationToken();
+            _oauth = new OAuthConnection
+            {
+                StorageAccountName = _storageAccount,
+                ApplicationID = _appID,
+                TenantID = _tenantID,
+                ClientSecret = _clientSecret,
+            };
 
 
             // setup test material for download tasks
@@ -108,11 +117,8 @@ namespace Frends.Community.Azure.Blob.Tests
         {
             var source = new SourceProperties
             {
-                ConnectionMethod = ConnectionMethod.AccessToken,
-                StorageAccountName = _storageAccount,
-                ApplicationID = _appID,
-                TenantID = _tenantID,
-                ClientSecret = _clientSecret,
+                ConnectionMethod = ConnectionMethod.OAuth2,
+                Connection = _oauth,
                 BlobName = _testBlob,
                 BlobType = AzureBlobType.Block,
                 ContainerName = _containerName,
@@ -173,11 +179,8 @@ namespace Frends.Community.Azure.Blob.Tests
         {
             var source = new SourceProperties
             {
-                ConnectionMethod = ConnectionMethod.AccessToken,
-                StorageAccountName = _storageAccount,
-                ApplicationID = _appID,
-                TenantID = _tenantID,
-                ClientSecret = _clientSecret,
+                ConnectionMethod = ConnectionMethod.OAuth2,
+                Connection = _oauth,
                 BlobName = _testBlob,
                 BlobType = AzureBlobType.Block,
                 ContainerName = _containerName,

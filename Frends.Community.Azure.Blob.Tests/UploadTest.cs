@@ -216,14 +216,18 @@ namespace Frends.Community.Azure.Blob.Tests
             var input = new UploadInput
             {
                 SourceFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestFiles", "TestFile2.xml")
-        };
-            var options = new DestinationProperties
+            };
+            var oauth = new OAuthConnection
             {
-                ConnectionMethod = ConnectionMethod.AccessToken,
                 ApplicationID = _appID,
                 TenantID = _tenantID,
                 ClientSecret = _clientSecret,
-                StorageAccountName = _storageAccount,
+                StorageAccountName = _storageAccount
+            };
+            var options = new DestinationProperties
+            {
+                ConnectionMethod = ConnectionMethod.OAuth2,
+                Connection = oauth,
                 ContainerName = _containerName,
                 BlobType = AzureBlobType.Block,
                 ParallelOperations = 24,

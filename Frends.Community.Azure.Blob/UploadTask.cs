@@ -36,7 +36,7 @@ namespace Frends.Community.Azure.Blob
             if (destinationProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
                 container = Utils.GetBlobContainer(destinationProperties.ConnectionString, destinationProperties.ContainerName);
             else
-                container = Utils.GetBlobContainer(destinationProperties.ApplicationID, destinationProperties.TenantID, destinationProperties.ClientSecret, destinationProperties.StorageAccountName, destinationProperties.ContainerName);
+                container = Utils.GetBlobContainer(destinationProperties.Connection.ApplicationID, destinationProperties.Connection.TenantID, destinationProperties.Connection.ClientSecret, destinationProperties.Connection.StorageAccountName, destinationProperties.ContainerName);
 
             try
             {
@@ -100,8 +100,8 @@ namespace Frends.Community.Azure.Blob
                 blob = new BlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
             else
             {
-                var credentials = new ClientSecretCredential(destinationProperties.TenantID, destinationProperties.ApplicationID, destinationProperties.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{destinationProperties.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
+                var credentials = new ClientSecretCredential(destinationProperties.Connection.TenantID, destinationProperties.Connection.ApplicationID, destinationProperties.Connection.ClientSecret, new ClientSecretCredentialOptions());
+                var url = new Uri($"https://{destinationProperties.Connection.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
                 blob = new BlobClient(url, credentials);
             }
 
@@ -155,8 +155,8 @@ namespace Frends.Community.Azure.Blob
                 blob = new AppendBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
             else
             {
-                var credentials = new ClientSecretCredential(destinationProperties.TenantID, destinationProperties.ApplicationID, destinationProperties.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{destinationProperties.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
+                var credentials = new ClientSecretCredential(destinationProperties.Connection.TenantID, destinationProperties.Connection.ApplicationID, destinationProperties.Connection.ClientSecret, new ClientSecretCredentialOptions());
+                var url = new Uri($"https://{destinationProperties.Connection.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
                 blob = new AppendBlobClient(url, credentials);
             }
 
@@ -212,8 +212,8 @@ namespace Frends.Community.Azure.Blob
                 blob = new PageBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
             else
             {
-                var credentials = new ClientSecretCredential(destinationProperties.TenantID, destinationProperties.ApplicationID, destinationProperties.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{destinationProperties.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
+                var credentials = new ClientSecretCredential(destinationProperties.Connection.TenantID, destinationProperties.Connection.ApplicationID, destinationProperties.Connection.ClientSecret, new ClientSecretCredentialOptions());
+                var url = new Uri($"https://{destinationProperties.Connection.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
                 blob = new PageBlobClient(url, credentials);
             }
 
@@ -268,34 +268,10 @@ namespace Frends.Community.Azure.Blob
         public string ConnectionString { get; set; }
 
         /// <summary>
-        ///     Application (Client) ID of Azure AD Application.
+        ///     OAuth2 connection information.
         /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [DisplayName("Application ID")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string ApplicationID { get; set; }
-
-        /// <summary>
-        ///     Tenant ID of Azure Tenant.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [DisplayName("Tenant ID")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string TenantID { get; set; }
-
-        /// <summary>
-        ///     Client Secret of Azure AD Application.
-        /// </summary>
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        [PasswordPropertyText]
-        public string ClientSecret { get; set; }
-
-        /// <summary>
-        ///     Name of the storage account.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string StorageAccountName { get; set; }
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.OAuth2)]
+        public OAuthConnection Connection { get; set; }
 
         /// <summary>
         ///     Name of the azure blob storage container where the data will be uploaded.

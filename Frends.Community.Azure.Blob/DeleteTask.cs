@@ -29,8 +29,8 @@ namespace Frends.Community.Azure.Blob
                 blob = new BlobClient(connectionProperties.ConnectionString, connectionProperties.ContainerName, target.BlobName);
             else
             {
-                var credentials = new ClientSecretCredential(connectionProperties.TenantID, connectionProperties.ApplicationID, connectionProperties.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{connectionProperties.StorageAccountName}.blob.core.windows.net/{connectionProperties.ContainerName}/{target.BlobName}");
+                var credentials = new ClientSecretCredential(connectionProperties.Connection.TenantID, connectionProperties.Connection.ApplicationID, connectionProperties.Connection.ClientSecret, new ClientSecretCredentialOptions());
+                var url = new Uri($"https://{connectionProperties.Connection.StorageAccountName}.blob.core.windows.net/{connectionProperties.ContainerName}/{target.BlobName}");
                 blob = new BlobClient(url, credentials);
             }
 
@@ -69,7 +69,7 @@ namespace Frends.Community.Azure.Blob
             if (connectionProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
                 container = Utils.GetBlobContainer(connectionProperties.ConnectionString, target.ContainerName);
             else
-                container = Utils.GetBlobContainer(connectionProperties.ApplicationID, connectionProperties.TenantID, connectionProperties.ClientSecret, connectionProperties.StorageAccountName, target.ContainerName);
+                container = Utils.GetBlobContainer(connectionProperties.Connection.ApplicationID, connectionProperties.Connection.TenantID, connectionProperties.Connection.ClientSecret, connectionProperties.Connection.StorageAccountName, target.ContainerName);
 
             if (!await container.ExistsAsync(cancellationToken)) return new DeleteOutput {Success = true};
 
@@ -125,34 +125,10 @@ namespace Frends.Community.Azure.Blob
         public string ConnectionString { get; set; }
 
         /// <summary>
-        ///     Name of the storage account.
+        ///     OAuth2 connection information.
         /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string StorageAccountName { get; set; }
-
-        /// <summary>
-        ///     Application (Client) ID of Azure AD Application.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [DisplayName("Application ID")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string ApplicationID { get; set; }
-
-        /// <summary>
-        ///     Tenant ID of Azure Tenant.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [DisplayName("Tenant ID")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string TenantID { get; set; }
-
-        /// <summary>
-        ///     Client Secret of Azure AD Application.
-        /// </summary>
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        [PasswordPropertyText]
-        public string ClientSecret { get; set; }
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.OAuth2)]
+        public OAuthConnection Connection { get; set; }
     }
 
     public class BlobConnectionProperties
@@ -173,11 +149,10 @@ namespace Frends.Community.Azure.Blob
         public string ConnectionString { get; set; }
 
         /// <summary>
-        ///     Name of the storage account.
+        ///     OAuth2 connection information.
         /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string StorageAccountName { get; set; }
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.OAuth2)]
+        public OAuthConnection Connection { get; set; }
 
         /// <summary>
         ///     Name of the container where delete blob exists.
@@ -186,29 +161,6 @@ namespace Frends.Community.Azure.Blob
         [DefaultValue("test-container")]
         [DisplayFormat(DataFormatString = "Text")]
         public string ContainerName { get; set; }
-
-        /// <summary>
-        ///     Application (Client) ID of Azure AD Application.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [DisplayName("Application ID")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string ApplicationID { get; set; }
-
-        /// <summary>
-        ///     Tenant ID of Azure Tenant.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [DisplayName("Tenant ID")]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        public string TenantID { get; set; }
-
-        /// <summary>
-        ///     Client Secret of Azure AD Application.
-        /// </summary>
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.AccessToken)]
-        [PasswordPropertyText]
-        public string ClientSecret { get; set; }
     }
 
     public class DeleteBlobProperties
