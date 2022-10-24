@@ -9,8 +9,6 @@ using MimeMapping;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
-using Azure.Identity;
 
 #pragma warning disable CS1591
 
@@ -94,16 +92,7 @@ namespace Frends.Community.Azure.Blob
             string fileName,
             CancellationToken cancellationToken)
         {
-            BlobClient blob;
-
-            if (destinationProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
-                blob = new BlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
-            else
-            {
-                var credentials = new ClientSecretCredential(destinationProperties.Connection.TenantID, destinationProperties.Connection.ApplicationID, destinationProperties.Connection.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{destinationProperties.Connection.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
-                blob = new BlobClient(url, credentials);
-            }
+            var blob = Utils.GetBlobClient(destinationProperties.ConnectionMethod, destinationProperties.ConnectionString, destinationProperties.Connection, destinationProperties.ContainerName, fileName);
 
             var contentType = string.IsNullOrWhiteSpace(destinationProperties.ContentType)
                 ? MimeUtility.GetMimeMapping(fi.Name)
@@ -149,16 +138,7 @@ namespace Frends.Community.Azure.Blob
             string fileName,
             CancellationToken cancellationToken)
         {
-            AppendBlobClient blob;
-
-            if (destinationProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
-                blob = new AppendBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
-            else
-            {
-                var credentials = new ClientSecretCredential(destinationProperties.Connection.TenantID, destinationProperties.Connection.ApplicationID, destinationProperties.Connection.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{destinationProperties.Connection.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
-                blob = new AppendBlobClient(url, credentials);
-            }
+            var blob = Utils.GetAppendBlobClient(destinationProperties.ConnectionMethod, destinationProperties.ConnectionString, destinationProperties.Connection, destinationProperties.ContainerName, fileName);
 
             var encoding = GetEncoding(destinationProperties.FileEncoding);
 
@@ -206,16 +186,7 @@ namespace Frends.Community.Azure.Blob
             string fileName,
             CancellationToken cancellationToken)
         {
-            PageBlobClient blob;
-
-            if (destinationProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
-                blob = new PageBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
-            else
-            {
-                var credentials = new ClientSecretCredential(destinationProperties.Connection.TenantID, destinationProperties.Connection.ApplicationID, destinationProperties.Connection.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{destinationProperties.Connection.StorageAccountName}.blob.core.windows.net/{destinationProperties.ContainerName}/{fileName}");
-                blob = new PageBlobClient(url, credentials);
-            }
+            var blob = Utils.GetPageBlobClient(destinationProperties.ConnectionMethod, destinationProperties.ConnectionString, destinationProperties.Connection, destinationProperties.ContainerName, fileName); ;
 
             var encoding = GetEncoding(destinationProperties.FileEncoding);
 

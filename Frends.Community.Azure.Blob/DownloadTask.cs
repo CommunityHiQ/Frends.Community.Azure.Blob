@@ -25,16 +25,7 @@ namespace Frends.Community.Azure.Blob
         public static async Task<DownloadBlobOutput> DownloadBlobAsync([PropertyTab]SourceProperties source,
             [PropertyTab]DestinationFileProperties destination, CancellationToken cancellationToken)
         {
-            BlobClient blob;
-
-            if (source.ConnectionMethod == ConnectionMethod.ConnectionString)
-                blob = new BlobClient(source.ConnectionString, source.ContainerName, source.BlobName);
-            else
-            {
-                var credentials = new ClientSecretCredential(source.Connection.TenantID, source.Connection.ApplicationID, source.Connection.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{source.Connection.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{source.BlobName}");
-                blob = new BlobClient(url, credentials);
-            }
+            var blob = Utils.GetBlobClient(source.ConnectionMethod, source.ConnectionString, source.Connection, source.ContainerName, source.BlobName);
 
             var fullDestinationPath = Path.Combine(destination.Directory, source.BlobName);
             var fileName = source.BlobName.Split('.')[0];
@@ -83,16 +74,7 @@ namespace Frends.Community.Azure.Blob
         public static async Task<ReadContentOutput> ReadBlobContentAsync([PropertyTab]SourceProperties source,
             CancellationToken cancellationToken)
         {
-            BlobClient blob;
-
-            if (source.ConnectionMethod == ConnectionMethod.ConnectionString)
-                blob = new BlobClient(source.ConnectionString, source.ContainerName, source.BlobName);
-            else
-            {
-                var credentials = new ClientSecretCredential(source.Connection.TenantID, source.Connection.ApplicationID, source.Connection.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{source.Connection.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{source.BlobName}");
-                blob = new BlobClient(url, credentials);
-            }
+            var blob = Utils.GetBlobClient(source.ConnectionMethod, source.ConnectionString, source.Connection, source.ContainerName, source.BlobName); ;
 
             var result = await blob.DownloadContentAsync(cancellationToken);
             return new ReadContentOutput

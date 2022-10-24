@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
@@ -23,16 +22,7 @@ namespace Frends.Community.Azure.Blob
         public static async Task<DeleteOutput> DeleteBlobAsync([PropertyTab]DeleteBlobProperties target,
             [PropertyTab]BlobConnectionProperties connectionProperties, CancellationToken cancellationToken)
         {
-            BlobClient blob;
-
-            if (connectionProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
-                blob = new BlobClient(connectionProperties.ConnectionString, connectionProperties.ContainerName, target.BlobName);
-            else
-            {
-                var credentials = new ClientSecretCredential(connectionProperties.Connection.TenantID, connectionProperties.Connection.ApplicationID, connectionProperties.Connection.ClientSecret, new ClientSecretCredentialOptions());
-                var url = new Uri($"https://{connectionProperties.Connection.StorageAccountName}.blob.core.windows.net/{connectionProperties.ContainerName}/{target.BlobName}");
-                blob = new BlobClient(url, credentials);
-            }
+            var blob = Utils.GetBlobClient(connectionProperties.ConnectionMethod, connectionProperties.ConnectionString, connectionProperties.Connection, connectionProperties.ContainerName, target.BlobName);
 
             if (!await blob.ExistsAsync(cancellationToken)) return new DeleteOutput {Success = true};
 

@@ -6,8 +6,6 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using System.Threading;
-using Azure.Identity;
-using System;
 
 #pragma warning disable CS1591
 
@@ -55,16 +53,7 @@ namespace Frends.Community.Azure.Blob
                     foreach (var blobItem in blobItems.Values)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        BlobClient blob;
-
-                        if (source.ConnectionMethod == ConnectionMethod.ConnectionString)
-                            blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Name);
-                        else
-                        {
-                            var credentials = new ClientSecretCredential(source.Connection.TenantID, source.Connection.ApplicationID, source.Connection.ClientSecret, new ClientSecretCredentialOptions());
-                            var url = new Uri($"https://{source.Connection.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{blobItem.Name}");
-                            blob = new BlobClient(url, credentials);
-                        }
+                        var blob = Utils.GetBlobClient(source.ConnectionMethod, source.ConnectionString, source.Connection, source.ContainerName, blobItem.Name);
 
                         blobs.Add(new BlobData
                         {
@@ -97,16 +86,7 @@ namespace Frends.Community.Azure.Blob
                         cancellationToken.ThrowIfCancellationRequested();
                         if (blobItem.IsBlob)
                         {
-                            BlobClient blob;
-
-                            if (source.ConnectionMethod == ConnectionMethod.ConnectionString)
-                                blob = new BlobClient(source.ConnectionString, source.ContainerName, blobItem.Blob.Name);
-                            else
-                            {
-                                var credentials = new ClientSecretCredential(source.Connection.TenantID, source.Connection.ApplicationID, source.Connection.ClientSecret, new ClientSecretCredentialOptions());
-                                var url = new Uri($"https://{source.Connection.StorageAccountName}.blob.core.windows.net/{source.ContainerName}/{blobItem.Blob.Name}");
-                                blob = new BlobClient(url, credentials);
-                            }
+                            var blob = Utils.GetBlobClient(source.ConnectionMethod, source.ConnectionString, source.Connection, source.ContainerName, blobItem.Blob.Name);
 
                             blobs.Add(new BlobData
                             {
