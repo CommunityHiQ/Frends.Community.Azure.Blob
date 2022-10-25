@@ -19,15 +19,10 @@ namespace Frends.Community.Azure.Blob
         /// <param name="connectionProperties"></param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Object { bool Success }</returns>
-        public static async Task<DeleteOutput> DeleteBlobAsync(DeleteBlobProperties target,
-            BlobConnectionProperties connectionProperties, CancellationToken cancellationToken)
+        public static async Task<DeleteOutput> DeleteBlobAsync([PropertyTab]DeleteBlobProperties target,
+            [PropertyTab]BlobConnectionProperties connectionProperties, CancellationToken cancellationToken)
         {
-
-            // get Blob Client
-            var blob = new BlobClient(connectionProperties.ConnectionString, connectionProperties.ContainerName, target.BlobName);
-
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
+            var blob = Utils.GetBlobClient(connectionProperties.ConnectionMethod, connectionProperties.ConnectionString, connectionProperties.Connection, connectionProperties.ContainerName, target.BlobName);
 
             if (!await blob.ExistsAsync(cancellationToken)) return new DeleteOutput {Success = true};
 
@@ -56,14 +51,15 @@ namespace Frends.Community.Azure.Blob
         /// <param name="connectionProperties"></param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Object { bool Success }</returns>
-        public static async Task<DeleteOutput> DeleteContainerAsync(DeleteContainerProperties target,
-            ContainerConnectionProperties connectionProperties, CancellationToken cancellationToken)
+        public static async Task<DeleteOutput> DeleteContainerAsync([PropertyTab]DeleteContainerProperties target,
+            [PropertyTab]ContainerConnectionProperties connectionProperties, CancellationToken cancellationToken)
         {
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
+            BlobContainerClient container;
 
-            // get container
-            var container = Utils.GetBlobContainer(connectionProperties.ConnectionString, target.ContainerName);
+            if (connectionProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
+                container = Utils.GetBlobContainer(connectionProperties.ConnectionString, target.ContainerName);
+            else
+                container = Utils.GetBlobContainer(connectionProperties.Connection.ApplicationID, connectionProperties.Connection.TenantID, connectionProperties.Connection.ClientSecret, connectionProperties.Connection.StorageAccountName, target.ContainerName);
 
             if (!await container.ExistsAsync(cancellationToken)) return new DeleteOutput {Success = true};
 
@@ -104,23 +100,49 @@ namespace Frends.Community.Azure.Blob
     public class ContainerConnectionProperties
     {
         /// <summary>
-        ///     Connection string to Azure storage
+        ///     Which connection method should be used for connecting to Azure Blob Storage?
         /// </summary>
-        [DefaultValue("UseDevelopmentStorage=true")]
-        [DisplayName("Connection String")]
-        [DisplayFormat(DataFormatString = "Text")]
-        public string ConnectionString { get; set; }
-    }
+        [DefaultValue(ConnectionMethod.ConnectionString)]
+        public ConnectionMethod ConnectionMethod { get; set; }
 
-    public class BlobConnectionProperties
-    {
         /// <summary>
         ///     Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
         [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
         public string ConnectionString { get; set; }
+
+        /// <summary>
+        ///     OAuth2 connection information.
+        /// </summary>
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.OAuth2)]
+        public OAuthConnection Connection { get; set; }
+    }
+
+    public class BlobConnectionProperties
+    {
+        /// <summary>
+        ///     Which connection method should be used for connecting to Azure Blob Storage?
+        /// </summary>
+        [DefaultValue(ConnectionMethod.ConnectionString)]
+        public ConnectionMethod ConnectionMethod { get; set; }
+
+        /// <summary>
+        ///     Connection string to Azure storage
+        /// </summary>
+        [DefaultValue("UseDevelopmentStorage=true")]
+        [DisplayName("Connection String")]
+        [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
+        public string ConnectionString { get; set; }
+
+        /// <summary>
+        ///     OAuth2 connection information.
+        /// </summary>
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.OAuth2)]
+        public OAuthConnection Connection { get; set; }
 
         /// <summary>
         ///     Name of the container where delete blob exists.

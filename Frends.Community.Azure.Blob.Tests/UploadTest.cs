@@ -11,9 +11,13 @@ namespace Frends.Community.Azure.Blob.Tests
     public class UploadTest
     {
         /// <summary>
-        ///     Connection string for Azure Storage Emulator
+        ///     Connection string for Azure Storage Account
         /// </summary>
         private readonly string _connectionString = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ConnString");
+        private readonly string _appID = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_AppID");
+        private readonly string _tenantID = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_TenantID");
+        private readonly string _clientSecret = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ClientSecret");
+        private readonly string _storageAccount = "testsorage01";
 
         /// <summary>
         ///     Container name for tests
@@ -59,6 +63,7 @@ namespace Frends.Community.Azure.Blob.Tests
             };
             var options = new DestinationProperties
             {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
                 ContainerName = _containerName,
                 BlobType = AzureBlobType.Block,
                 ParallelOperations = 24,
@@ -85,6 +90,7 @@ namespace Frends.Community.Azure.Blob.Tests
             };
             var options = new DestinationProperties
             {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
                 RenameTo = "RenamedFile.xml",
                 ContainerName = _containerName,
                 BlobType = AzureBlobType.Block,
@@ -115,6 +121,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
             var options = new DestinationProperties
             {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
                 ContainerName = _containerName,
                 BlobType = AzureBlobType.Block,
                 ParallelOperations = 24,
@@ -148,6 +155,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
             var options = new DestinationProperties
             {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
                 ContainerName = _containerName,
                 BlobType = AzureBlobType.Block,
                 ParallelOperations = 24,
@@ -182,6 +190,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
             var options = new DestinationProperties
             {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
                 ContainerName = _containerName,
                 BlobType = AzureBlobType.Block,
                 ParallelOperations = 24,
@@ -199,6 +208,41 @@ namespace Frends.Community.Azure.Blob.Tests
             var properties = await blobResult.GetPropertiesAsync(null, new CancellationToken());
 
             Assert.IsTrue(properties.Value.ContentEncoding == "gzip");
+        }
+
+        [TestMethod]
+        public async Task UploadFileAsync_AccessTokenAuthenticationTest()
+        {
+            var input = new UploadInput
+            {
+                SourceFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestFiles", "TestFile2.xml")
+            };
+            var oauth = new OAuthConnection
+            {
+                ApplicationID = _appID,
+                TenantID = _tenantID,
+                ClientSecret = _clientSecret,
+                StorageAccountName = _storageAccount
+            };
+            var options = new DestinationProperties
+            {
+                ConnectionMethod = ConnectionMethod.OAuth2,
+                Connection = oauth,
+                ContainerName = _containerName,
+                BlobType = AzureBlobType.Block,
+                ParallelOperations = 24,
+                ConnectionString = _connectionString,
+                Overwrite = true,
+                CreateContainerIfItDoesNotExist = true,
+                FileEncoding = "utf-8"
+            };
+            var container = Utils.GetBlobContainer(_connectionString, _containerName);
+
+            var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
+            var blobResult = container.GetBlobClient("TestFile2.xml");
+
+            StringAssert.EndsWith(result.Uri, $"{_containerName}/TestFile2.xml");
+            Assert.IsTrue(blobResult.Exists(), "Uploaded TestFile2.xml blob should exist");
         }
     }
 }

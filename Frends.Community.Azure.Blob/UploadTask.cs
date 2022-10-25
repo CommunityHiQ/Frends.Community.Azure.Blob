@@ -5,12 +5,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text;
-using System.Linq;
 using MimeMapping;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
 
 #pragma warning disable CS1591
 
@@ -23,23 +21,21 @@ namespace Frends.Community.Azure.Blob
         ///     Will create given container on connection if necessary.
         /// </summary>
         /// <returns>Object { string Uri, string SourceFile }</returns>
-        public static async Task<UploadOutput> UploadFileAsync(UploadInput input,
-            DestinationProperties destinationProperties, CancellationToken cancellationToken)
+        public static async Task<UploadOutput> UploadFileAsync([PropertyTab]UploadInput input,
+            [PropertyTab]DestinationProperties destinationProperties, CancellationToken cancellationToken)
         {
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
-
             // check that source file exists
             var fi = new FileInfo(input.SourceFile);
             if (!fi.Exists)
                 throw new ArgumentException($"Source file {input.SourceFile} does not exist", nameof(input.SourceFile));
 
-            // get container
-            var container = Utils.GetBlobContainer(destinationProperties.ConnectionString,
-                destinationProperties.ContainerName);
+            BlobContainerClient container;
 
-            // check for interruptions
-            cancellationToken.ThrowIfCancellationRequested();
+            if (destinationProperties.ConnectionMethod == ConnectionMethod.ConnectionString)
+                container = Utils.GetBlobContainer(destinationProperties.ConnectionString, destinationProperties.ContainerName);
+            else
+                container = Utils.GetBlobContainer(destinationProperties.Connection.ApplicationID, destinationProperties.Connection.TenantID, destinationProperties.Connection.ClientSecret, destinationProperties.Connection.StorageAccountName, destinationProperties.ContainerName);
+
             try
             {
                 if (destinationProperties.CreateContainerIfItDoesNotExist)
@@ -52,17 +48,11 @@ namespace Frends.Community.Azure.Blob
 
             string fileName;
             if (string.IsNullOrWhiteSpace(destinationProperties.RenameTo) && input.Compress)
-            {
                 fileName = fi.Name + ".gz";
-            }
             else if (string.IsNullOrWhiteSpace(destinationProperties.RenameTo))
-            {
                 fileName = fi.Name;
-            }
             else
-            {
                 fileName = destinationProperties.RenameTo;
-            }
 
             // return uri to uploaded blob and source file path
 
@@ -102,8 +92,7 @@ namespace Frends.Community.Azure.Blob
             string fileName,
             CancellationToken cancellationToken)
         {
-            // get the destination blob, rename if necessary
-            var blob = new BlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+            var blob = Utils.GetBlobClient(destinationProperties.ConnectionMethod, destinationProperties.ConnectionString, destinationProperties.Connection, destinationProperties.ContainerName, fileName);
 
             var contentType = string.IsNullOrWhiteSpace(destinationProperties.ContentType)
                 ? MimeUtility.GetMimeMapping(fi.Name)
@@ -149,11 +138,7 @@ namespace Frends.Community.Azure.Blob
             string fileName,
             CancellationToken cancellationToken)
         {
-
-            //if(fileName.Contains(Path.DirectorySeparatorChar)) fileName = fileName.Split(Path.DirectorySeparatorChar).Last();
-
-            // get the destination blob, rename if necessary
-            var blob = new AppendBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+            var blob = Utils.GetAppendBlobClient(destinationProperties.ConnectionMethod, destinationProperties.ConnectionString, destinationProperties.Connection, destinationProperties.ContainerName, fileName);
 
             var encoding = GetEncoding(destinationProperties.FileEncoding);
 
@@ -201,8 +186,7 @@ namespace Frends.Community.Azure.Blob
             string fileName,
             CancellationToken cancellationToken)
         {
-            // get the destination blob, rename if necessary
-            var blob = new PageBlobClient(destinationProperties.ConnectionString, destinationProperties.ContainerName, fileName);
+            var blob = Utils.GetPageBlobClient(destinationProperties.ConnectionMethod, destinationProperties.ConnectionString, destinationProperties.Connection, destinationProperties.ContainerName, fileName); ;
 
             var encoding = GetEncoding(destinationProperties.FileEncoding);
 
@@ -240,12 +224,25 @@ namespace Frends.Community.Azure.Blob
     public class DestinationProperties
     {
         /// <summary>
+        ///     Which connection method should be used for connecting to Azure Blob Storage?
+        /// </summary>
+        [DefaultValue(ConnectionMethod.ConnectionString)]
+        public ConnectionMethod ConnectionMethod { get; set; }
+
+        /// <summary>
         ///     Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
         [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
         public string ConnectionString { get; set; }
+
+        /// <summary>
+        ///     OAuth2 connection information.
+        /// </summary>
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.OAuth2)]
+        public OAuthConnection Connection { get; set; }
 
         /// <summary>
         ///     Name of the azure blob storage container where the data will be uploaded.

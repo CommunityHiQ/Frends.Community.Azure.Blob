@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,9 +11,13 @@ namespace Frends.Community.Azure.Blob.Tests
     public class ListTests
     {
         /// <summary>
-        ///     Connection string for Azure Storage Emulator
+        ///     Connection string for Azure Storage Account
         /// </summary>
         private readonly string _connectionString = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ConnString");
+        private readonly string _appID = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_AppID");
+        private readonly string _tenantID = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_TenantID");
+        private readonly string _clientSecret = Environment.GetEnvironmentVariable("HiQ_AzureBlobStorage_ClientSecret");
+        private readonly string _storageAccount = "testsorage01";
 
         /// <summary>
         ///     Test blob name
@@ -39,6 +44,7 @@ namespace Frends.Community.Azure.Blob.Tests
 
             _sourceProperties = new ListSourceProperties
             {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
                 ConnectionString = _connectionString,
                 ContainerName = _containerName,
                 FlatBlobListing = false
@@ -65,7 +71,7 @@ namespace Frends.Community.Azure.Blob.Tests
         [TestMethod]
         public async Task ListBlobs_ReturnBlockAndDirectory()
         {
-            var result = await ListTask.ListBlobs(_sourceProperties);
+            var result = await ListTask.ListBlobs(_sourceProperties, new CancellationToken());
 
             Assert.AreEqual(2, result.Blobs.Count);
             Assert.AreEqual("Block", result.Blobs[1].BlobType);
@@ -78,9 +84,36 @@ namespace Frends.Community.Azure.Blob.Tests
         public async Task ListBlobsWithPrefix()
         {
             _sourceProperties.FlatBlobListing = true;
-            var result = await ListTask.ListBlobs(_sourceProperties);
+            var result = await ListTask.ListBlobs(_sourceProperties, new CancellationToken());
 
             Assert.AreEqual(2, result.Blobs.Count);
+        }
+
+        [TestMethod]
+        public async Task ListBlobs_AccessTokenAuthenticationTest()
+        {
+            var oauth = new OAuthConnection
+            {
+                ApplicationID = _appID,
+                TenantID = _tenantID,
+                ClientSecret = _clientSecret,
+                StorageAccountName = _storageAccount
+            };
+            var sourceProperties = new ListSourceProperties
+            {
+                ConnectionMethod = ConnectionMethod.OAuth2,
+                Connection = oauth,
+                ContainerName = _containerName,
+                FlatBlobListing = false
+            };
+
+            var result = await ListTask.ListBlobs(sourceProperties, new CancellationToken());
+
+            Assert.AreEqual(2, result.Blobs.Count);
+            Assert.AreEqual("Block", result.Blobs[1].BlobType);
+            Assert.AreEqual(_testBlob, result.Blobs[1].Name);
+
+            Assert.AreEqual("Directory", result.Blobs[0].BlobType);
         }
     }
 }

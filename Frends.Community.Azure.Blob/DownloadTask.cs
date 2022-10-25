@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Identity;
 using Azure.Storage.Blobs;
 
 #pragma warning disable CS1591
@@ -21,10 +22,11 @@ namespace Frends.Community.Azure.Blob
         /// <param name="destination"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>Object { string FileName, string Directory, string FullPath}</returns>
-        public static async Task<DownloadBlobOutput> DownloadBlobAsync(SourceProperties source,
-            DestinationFileProperties destination, CancellationToken cancellationToken)
+        public static async Task<DownloadBlobOutput> DownloadBlobAsync([PropertyTab]SourceProperties source,
+            [PropertyTab]DestinationFileProperties destination, CancellationToken cancellationToken)
         {
-            var blob = new BlobClient(source.ConnectionString, source.ContainerName, source.BlobName);
+            var blob = Utils.GetBlobClient(source.ConnectionMethod, source.ConnectionString, source.Connection, source.ContainerName, source.BlobName);
+
             var fullDestinationPath = Path.Combine(destination.Directory, source.BlobName);
             var fileName = source.BlobName.Split('.')[0];
             var fileExtension = "";
@@ -35,9 +37,7 @@ namespace Frends.Community.Azure.Blob
             }
 
             if (destination.FileExistsOperation == FileExistsAction.Error && File.Exists(fullDestinationPath))
-            {
                 throw new IOException("File already exists in destination path. Please delete the existing file or change the \"file exists operation\" to OverWrite.");
-            }
 
             if (destination.FileExistsOperation == FileExistsAction.Rename && File.Exists(fullDestinationPath))
             {
@@ -45,20 +45,17 @@ namespace Frends.Community.Azure.Blob
                 var incrementedFileName = fileName + "(" + increment.ToString() + ")" + fileExtension;
                 while (File.Exists(Path.Combine(destination.Directory, incrementedFileName)))
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     increment++;
                     incrementedFileName = fileName + "(" + increment.ToString() + ")" + fileExtension;
                 }
                 fullDestinationPath = Path.Combine(destination.Directory, incrementedFileName);
                 fileName = incrementedFileName;
-                cancellationToken.ThrowIfCancellationRequested();
-                var _ = await blob.DownloadToAsync(fullDestinationPath, cancellationToken);
+                await blob.DownloadToAsync(fullDestinationPath, cancellationToken);
             }
             else
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var _ = await blob.DownloadToAsync(fullDestinationPath, cancellationToken);
-            }
-            cancellationToken.ThrowIfCancellationRequested();
+                await blob.DownloadToAsync(fullDestinationPath, cancellationToken);
+
             CheckAndFixFileEncoding(fullDestinationPath, destination.Directory, fileExtension, source.Encoding);
             return new DownloadBlobOutput
             {
@@ -74,11 +71,11 @@ namespace Frends.Community.Azure.Blob
         /// <param name="source"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>Object { string Content }</returns>
-        public static async Task<ReadContentOutput> ReadBlobContentAsync(SourceProperties source,
+        public static async Task<ReadContentOutput> ReadBlobContentAsync([PropertyTab]SourceProperties source,
             CancellationToken cancellationToken)
         {
-            var blob = new BlobClient(source.ConnectionString, source.ContainerName, source.BlobName);
-            cancellationToken.ThrowIfCancellationRequested();
+            var blob = Utils.GetBlobClient(source.ConnectionMethod, source.ConnectionString, source.Connection, source.ContainerName, source.BlobName); ;
+
             var result = await blob.DownloadContentAsync(cancellationToken);
             return new ReadContentOutput
             {
@@ -179,12 +176,26 @@ namespace Frends.Community.Azure.Blob
 
     public class SourceProperties
     {
+
+        /// <summary>
+        ///     Which connection method should be used for connecting to Azure Blob Storage?
+        /// </summary>
+        [DefaultValue(ConnectionMethod.ConnectionString)]
+        public ConnectionMethod ConnectionMethod { get; set; }
+
         /// <summary>
         ///     Connection string to Azure storage
         /// </summary>
         [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayFormat(DataFormatString = "Text")]
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
         public string ConnectionString { get; set; }
+
+        /// <summary>
+        ///     OAuth2 connection information.
+        /// </summary>
+        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.OAuth2)]
+        public OAuthConnection Connection { get; set; }
 
         /// <summary>
         ///     Name of the azure blob storage container where the file is downloaded from.
