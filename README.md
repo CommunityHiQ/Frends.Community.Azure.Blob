@@ -266,3 +266,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | 1.6.0   | Added encoding option to ReadBlobContentAsync task.                                                                                               |
 | 2.0.0   | Added support for both .netStandard 2.0 and net471.                                                                                               |
 | 3.0.0   | Added support for access token authentication to all tasks. Provider is client credentials provider.                                              |
+| 3.0.1   | Added Azure.Core as dependency.                                                                                                                   |
