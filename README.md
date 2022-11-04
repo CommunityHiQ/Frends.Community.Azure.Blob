@@ -267,3 +267,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | 2.0.0   | Added support for both .netStandard 2.0 and net471.                                                                                               |
 | 3.0.0   | Added support for access token authentication to all tasks. Provider is client credentials provider.                                              |
 | 3.0.1   | Added Azure.Core as dependency.                                                                                                                   |
+| 3.0.2   | Added Microsoft.Identity.Client as dependency. Changed ConnectionString to secret to all tasks.                                                   |

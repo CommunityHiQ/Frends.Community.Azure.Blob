@@ -232,9 +232,9 @@ namespace Frends.Community.Azure.Blob
         /// <summary>
         ///     Connection string to Azure storage
         /// </summary>
-        [DefaultValue("UseDevelopmentStorage=true")]
         [DisplayName("Connection String")]
         [DisplayFormat(DataFormatString = "Text")]
+        [PasswordPropertyText]
         [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
         public string ConnectionString { get; set; }
 
