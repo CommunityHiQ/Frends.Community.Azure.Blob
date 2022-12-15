@@ -38,6 +38,7 @@ Uploads file to a target container. If the container doesn't exist, it will be c
 | Source File   | `string` | Full path to file that is uploaded.                                   | 'c:\temp\uploadMe.xml' |
 | Contents Only | `bool`   | Reads file content as string and treats content as selected Encoding. | true                   |
 | Compress      | `bool`   | Applies gzip compression to file or file content.                     | true                   |
+| Tags          | Tag[]    | Index tags for blob.                                                  | See [Tag](#tag)        |
 
 ### Destination properties
 
@@ -57,6 +58,13 @@ Uploads file to a target container. If the container doesn't exist, it will be c
 | ParallelOperations                    | `int`                               | The number of the concurrent operations.                                                       | 64                           |
 | Content-Type                          | `string`                            | Forces any content-type to file. If empty, tries to guess based on extension and MIME-type.    | text/xml                     |
 | Content-Encoding                      | `string`                            | File content is treated as this. Does not affect file encoding when Contents Only is true. If compression is enabled, Content-Type is set as 'gzip'. | utf8 |
+
+### Tag
+
+| Property | Type     | Description             | Example  |
+|----------|----------|-------------------------|----------|
+| Name     | `string` | Name of the index tag.  | TagName  |
+| Value    | `string` | Value of the index tag. | TagValue |
 
 ### Returns
 
@@ -268,3 +276,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | 3.0.0   | Added support for access token authentication to all tasks. Provider is client credentials provider.                                              |
 | 3.0.1   | Added Azure.Core as dependency.                                                                                                                   |
 | 3.0.2   | Added Microsoft.Identity.Client as dependency. Changed ConnectionString to secret to all tasks.                                                   |
+| 3.1.0   | UploadFileAsync: New feature to add index tags to uploaded blobs.                                                                                 |

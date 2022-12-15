@@ -9,6 +9,7 @@ using MimeMapping;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using System.Collections.Generic;
 
 #pragma warning disable CS1591
 
@@ -54,16 +55,22 @@ namespace Frends.Community.Azure.Blob
             else
                 fileName = destinationProperties.RenameTo;
 
+            Dictionary<string, string> tags = new Dictionary<string, string>();
+            if (input.Tags != null)
+                if (input.Tags.Length > 0)
+                    foreach (var tag in input.Tags)
+                        tags.Add(tag.Name, tag.Value);
+
             // return uri to uploaded blob and source file path
 
             switch (destinationProperties.BlobType)
             {
                 case AzureBlobType.Append:
-                    return await AppendBlob(input, destinationProperties, fi, fileName, cancellationToken);
+                    return await AppendBlob(input, destinationProperties, fi, fileName, tags, cancellationToken);
                 case AzureBlobType.Page:
                     return await UploadPageBlob(input, destinationProperties, fi, fileName, cancellationToken);
                 default:
-                    return await UploadBlockBlob(input, destinationProperties, fi, fileName, cancellationToken);
+                    return await UploadBlockBlob(input, destinationProperties, fi, fileName, tags, cancellationToken);
             }
         }
 
@@ -90,6 +97,7 @@ namespace Frends.Community.Azure.Blob
             DestinationProperties destinationProperties,
             FileInfo fi,
             string fileName,
+            Dictionary<string, string> tags,
             CancellationToken cancellationToken)
         {
             var blob = Utils.GetBlobClient(destinationProperties.ConnectionMethod, destinationProperties.ConnectionString, destinationProperties.Connection, destinationProperties.ContainerName, fileName);
@@ -113,7 +121,8 @@ namespace Frends.Community.Azure.Blob
             {
                 ProgressHandler = progressHandler,
                 TransferOptions = new StorageTransferOptions { MaximumConcurrency = destinationProperties.ParallelOperations },
-                HttpHeaders = new BlobHttpHeaders { ContentType = contentType, ContentEncoding = input.Compress ? "gzip" : encoding.WebName }
+                HttpHeaders = new BlobHttpHeaders { ContentType = contentType, ContentEncoding = input.Compress ? "gzip" : encoding.WebName },
+                Tags = tags
             };
 
             // begin and await for upload to complete
@@ -136,6 +145,7 @@ namespace Frends.Community.Azure.Blob
             DestinationProperties destinationProperties,
             FileInfo fi,
             string fileName,
+            Dictionary<string, string> tags,
             CancellationToken cancellationToken)
         {
             var blob = Utils.GetAppendBlobClient(destinationProperties.ConnectionMethod, destinationProperties.ConnectionString, destinationProperties.Connection, destinationProperties.ContainerName, fileName);
@@ -153,7 +163,8 @@ namespace Frends.Community.Azure.Blob
 
                 var uploadOptions = new AppendBlobCreateOptions
                 {
-                    HttpHeaders = new BlobHttpHeaders { ContentType = contentType, ContentEncoding = input.Compress ? "gzip" : encoding.WebName }
+                    HttpHeaders = new BlobHttpHeaders { ContentType = contentType, ContentEncoding = input.Compress ? "gzip" : encoding.WebName },
+                    Tags = tags
                 };
 
                 await blob.CreateAsync(uploadOptions, cancellationToken);
@@ -326,6 +337,26 @@ namespace Frends.Community.Azure.Blob
         [DefaultValue(false)]
         [DisplayName("Gzip compression")]
         public bool Compress { get; set; }
+
+        /// <summary>
+        ///     Tags for the uploaded blob.
+        /// </summary>
+        public Tag[] Tags { get; set; }
+    }
+
+    public class Tag
+    {
+        /// <summary>
+        ///     Name of the tag.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        public string Name { get; set; }
+
+        /// <summary>
+        ///     Value of the tag.
+        /// </summary>
+        [DisplayFormat(DataFormatString = "Text")]
+        public string Value { get; set; }
     }
 
     public enum AzureBlobType
