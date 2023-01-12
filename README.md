@@ -279,3 +279,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | 3.0.1   | Added Azure.Core as dependency.                                                                                                                   |
 | 3.0.2   | Added Microsoft.Identity.Client as dependency. Changed ConnectionString to secret to all tasks.                                                   |
 | 3.1.0   | UploadFileAsync: New feature to add index tags to uploaded blobs.                                                                                 |
+| 3.2.0   | DownloadBlobAsync: Added option to parse illegal characters when Blob is downloaded. Original Blob name added to result object.                   |
