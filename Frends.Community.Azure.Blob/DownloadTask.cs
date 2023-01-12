@@ -120,9 +120,7 @@ namespace Frends.Community.Azure.Blob
                 {
                     var line = "";
                     while ((line = sr.ReadLine()) != null)
-                    {
                         sw.WriteLine(line);
-                    }
                 }
                 File.Delete(fullPath);
                 File.Copy(tempFilePath, fullPath);
@@ -162,9 +160,8 @@ namespace Frends.Community.Azure.Blob
         {
             var invalid = new string(Path.GetInvalidFileNameChars());
             foreach (char character in invalid)
-            {
                 fileName = fileName.Replace(character.ToString(), "");
-            }
+
             return fileName;
         }
     }
