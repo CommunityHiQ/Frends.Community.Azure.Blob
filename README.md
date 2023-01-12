@@ -128,20 +128,22 @@ Downloads a blob to a file.
 
 ### Destination
 
-| Property            | Type                           | Description                     | Example        |
-|---------------------|--------------------------------|---------------------------------|----------------|
-| Directory           | `string`                       | Download destination directory. | 'c:\downloads' |
-| FileExistsOperation | enum: Error, Rename, Overwrite | Action to take if destination file exists. Error: throws exception, Overwrite: writes over existing file, Rename: Renames file by adding '(1)' at the end (example: myFile.txt --> myFile(1).txt) | Error |
+| Property               | Type                           | Description                                                      | Example        |
+|------------------------|--------------------------------|------------------------------------------------------------------|----------------|
+| Directory              | `string`                       | Download destination directory.                                  | 'c:\downloads' |
+| FileExistsOperation    | enum: Error, Rename, Overwrite | What should be done if destination file exists?                  | Error          |
+| ParseIllegalCharacters | bool                           | If Blob name contains illegal characters, should they be parsed? | false          |
 
 ### Returns
 
 Task returns an object with following properties
 
-| Property  | Type     | Description                   | Example           |
-|-----------|----------|-------------------------------|-------------------|
-| FileName  | `string` | Downloaded file name.         | 'file.txt'        |
-| Directory | `string` | Download directory.           | 'c:\tmp'          |
-| FullPath  | `string` | Full path to downloaded file. | 'c:\tmp\file.txt' |
+| Property         | Type     | Description                   | Example           |
+|------------------|----------|-------------------------------|-------------------|
+| FileName         | `string` | Downloaded file name.         | 'file.txt'        |
+| Directory        | `string` | Download directory.           | 'c:\tmp'          |
+| FullPath         | `string` | Full path to downloaded file. | 'c:\tmp\file.txt' |
+| OriginalFileName | `string` | Original name of the Blob.    | `file.txt`        |
 
 ## ReadBlobContentAsync
 

@@ -1,13 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Identity;
-using Azure.Storage.Blobs;
 
 #pragma warning disable CS1591
 
@@ -21,20 +17,27 @@ namespace Frends.Community.Azure.Blob
         /// <param name="source"></param>
         /// <param name="destination"></param>
         /// <param name="cancellationToken"></param>
-        /// <returns>Object { string FileName, string Directory, string FullPath}</returns>
+        /// <returns>Object { string FileName, string Directory, string FullPath, string OriginalFileName }</returns>
         public static async Task<DownloadBlobOutput> DownloadBlobAsync([PropertyTab]SourceProperties source,
             [PropertyTab]DestinationFileProperties destination, CancellationToken cancellationToken)
         {
             var blob = Utils.GetBlobClient(source.ConnectionMethod, source.ConnectionString, source.Connection, source.ContainerName, source.BlobName);
-
-            var fullDestinationPath = Path.Combine(destination.Directory, source.BlobName);
-            var fileName = source.BlobName.Split('.')[0];
-            var fileExtension = "";
-            if (source.BlobName.Split('.').Length > 1)
+            string fullDestinationPath;
+            string fileName;
+            var originalFileName = destination.ParseIllegalCharacters ? source.BlobName : "";
+            if (destination.ParseIllegalCharacters)
             {
-                fileName = string.Join(".", source.BlobName.Split('.').Take(source.BlobName.Split('.').Length - 1).ToArray());
-                fileExtension = "." + source.BlobName.Split('.').Last();
+                var parsedBlobName = HandleIllegalCharacters(source.BlobName);
+                fullDestinationPath = Path.Combine(destination.Directory, parsedBlobName);
+                fileName = parsedBlobName;
             }
+            else
+            {
+                fullDestinationPath = Path.Combine(destination.Directory, source.BlobName);
+                fileName = Path.GetFileNameWithoutExtension(fullDestinationPath);
+            }
+
+            var fileExtension = Path.HasExtension(fullDestinationPath) ? Path.GetExtension(fullDestinationPath) : "";
 
             if (destination.FileExistsOperation == FileExistsAction.Error && File.Exists(fullDestinationPath))
                 throw new IOException("File already exists in destination path. Please delete the existing file or change the \"file exists operation\" to OverWrite.");
@@ -61,7 +64,8 @@ namespace Frends.Community.Azure.Blob
             {
                 Directory = destination.Directory,
                 FileName = fileName,
-                FullPath = fullDestinationPath
+                FullPath = fullDestinationPath,
+                OriginalFileName = originalFileName
             };
         }
 
@@ -152,108 +156,16 @@ namespace Frends.Community.Azure.Blob
                     throw new Exception("Provided encoding is not supported. Please check supported encodings from Encoding-option.");
             }
         }
-    }
 
-    public class DownloadOutputBase
-    {
-        public string FileName { get; set; }
-        public string Directory { get; set; }
-        public string FullPath { get; set; }
-        public string Content { get; set; }
-    }
-
-    public class DownloadBlobOutput
-    {
-        public string FileName { get; set; }
-        public string Directory { get; set; }
-        public string FullPath { get; set; }
-    }
-
-    public class ReadContentOutput
-    {
-        public string Content { get; set; }
-    }
-
-    public class SourceProperties
-    {
-
-        /// <summary>
-        ///     Which connection method should be used for connecting to Azure Blob Storage?
-        /// </summary>
-        [DefaultValue(ConnectionMethod.ConnectionString)]
-        public ConnectionMethod ConnectionMethod { get; set; }
-
-        /// <summary>
-        ///     Connection string to Azure storage
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        [PasswordPropertyText]
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.ConnectionString)]
-        public string ConnectionString { get; set; }
-
-        /// <summary>
-        ///     OAuth2 connection information.
-        /// </summary>
-        [UIHint(nameof(ConnectionMethod), "", ConnectionMethod.OAuth2)]
-        public OAuthConnection Connection { get; set; }
-
-        /// <summary>
-        ///     Name of the azure blob storage container where the file is downloaded from.
-        /// </summary>
-        [DisplayFormat(DataFormatString = "Text")]
-        public string ContainerName { get; set; }
-
-        /// <summary>
-        ///     Name of the blob to download
-        /// </summary>
-        [DefaultValue("example.xml")]
-        [DisplayFormat(DataFormatString = "Text")]
-        public string BlobName { get; set; }
-
-        /// <summary>
-        ///     Azure blob type to upload: Append, Block or Page
-        /// </summary>
-        [DefaultValue(AzureBlobType.Block)]
-        [DisplayName("Blob Type")]
-        public AzureBlobType BlobType { get; set; }
-
-        /// <summary>
-        ///     Set encoding manually. Empty value tries to get encoding set in Azure.
-        ///     Supported values are utf-8, utf-7, utf-32, unicode, bigendianunicode and ascii.
-        /// </summary>
-        [DefaultValue("UTF-8")]
-        [DisplayFormat(DataFormatString = "Text")]
-        public string Encoding { get; set; }
-    }
-
-    public class DestinationFileProperties
-    {
-        /// <summary>
-        ///     Download destination directory.
-        /// </summary>
-        [DefaultValue(@"c:\temp")]
-        [DisplayFormat(DataFormatString = "Text")]
-        public string Directory { get; set; }
-
-        /// <summary>
-        ///     Error: Throws exception if destination file exists.
-        ///     Rename: Adds '(1)' at the end of file name. Incerements the number if (1) already exists.
-        ///     Overwrite: Overwrites existing file.
-        /// </summary>
-        [DefaultValue(FileExistsAction.Error)]
-        public FileExistsAction FileExistsOperation { get; set; }
-    }
-
-    public enum FileExistsAction
-    {
-        Error,
-        Rename,
-        Overwrite
-    }
-
-    public enum SourceBlobOperation
-    {
-        Download,
-        Read
+        // Parse illegal characters from filename.
+        private static string HandleIllegalCharacters(string fileName)
+        {
+            var invalid = new string(Path.GetInvalidFileNameChars());
+            foreach (char character in invalid)
+            {
+                fileName = fileName.Replace(character.ToString(), "");
+            }
+            return fileName;
+        }
     }
 }
