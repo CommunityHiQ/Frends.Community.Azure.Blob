@@ -193,5 +193,35 @@ namespace Frends.Community.Azure.Blob.Tests
             var fileContent = File.ReadAllText(result.FullPath);
             Assert.IsTrue(fileContent.Contains(@"<input>WhatHasBeenSeenCannotBeUnseen</input>"));
         }
+
+        [TestMethod]
+        public async Task DownloadBlobAsync_ParseIllegalCharacters()
+        {
+            // This test is using pre-existing testi_asi.aki[{rja:sd><fs.txt file in illegalcharactertest,
+            // since the file cannot be created and uploaded at test setup,
+            // since it contains illegal characters.
+
+            var source = new SourceProperties
+            {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
+                ConnectionString = _connectionString,
+                BlobName = "testi_asi.aki[{rja:sd><fs.txt",
+                BlobType = AzureBlobType.Block,
+                ContainerName = "illegalcharactertest",
+                Encoding = "utf-8"
+            };
+            var destination = new DestinationFileProperties
+            {
+                Directory = _destinationDirectory,
+                FileExistsOperation = FileExistsAction.Overwrite,
+                ParseIllegalCharacters = true
+            };
+
+            var result = await DownloadTask.DownloadBlobAsync(source, destination, new CancellationToken());
+
+            Assert.IsTrue(File.Exists(result.FullPath));
+            Assert.AreEqual("testi_asi.aki[{rjasdfs.txt", result.FileName);
+            Assert.AreEqual(source.BlobName, result.OriginalFileName);
+        }
     }
 }
