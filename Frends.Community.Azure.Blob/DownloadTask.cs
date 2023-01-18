@@ -97,34 +97,38 @@ namespace Frends.Community.Azure.Blob
         /// <returns></returns>
         private static void CheckAndFixFileEncoding(string fullPath, string directory, string fileExtension, string targetEncoding)
         {
-            var encoding = "";
-            using (var reader = new StreamReader(fullPath, true))
+            if (!string.IsNullOrEmpty(targetEncoding))
             {
-                reader.Read();
-                encoding = reader.CurrentEncoding.BodyName;
-            }
-            if (targetEncoding.ToLower() != encoding)
-            {
-                Encoding newEncoding;
-                try
+
+                var encoding = "";
+                using (var reader = new StreamReader(fullPath, true))
                 {
-                    newEncoding = Encoding.GetEncoding(targetEncoding.ToLower());
+                    reader.Read();
+                    encoding = reader.CurrentEncoding.BodyName;
                 }
-                catch (Exception)
+                if (targetEncoding.ToLower() != encoding)
                 {
-                    throw new Exception("Provided encoding is not supported. Please check supported encodings from Encoding-option.");
+                    Encoding newEncoding;
+                    try
+                    {
+                        newEncoding = Encoding.GetEncoding(targetEncoding.ToLower());
+                    }
+                    catch (Exception)
+                    {
+                        throw new Exception("Provided encoding is not supported. Please check supported encodings from Encoding-option.");
+                    }
+                    var tempFilePath = Path.Combine(directory, "encodingTemp" + fileExtension);
+                    using (var sr = new StreamReader(fullPath, true))
+                    using (var sw = new StreamWriter(tempFilePath, false, newEncoding))
+                    {
+                        var line = "";
+                        while ((line = sr.ReadLine()) != null)
+                            sw.WriteLine(line);
+                    }
+                    File.Delete(fullPath);
+                    File.Copy(tempFilePath, fullPath);
+                    File.Delete(tempFilePath);
                 }
-                var tempFilePath = Path.Combine(directory, "encodingTemp" + fileExtension);
-                using (var sr = new StreamReader(fullPath, true))
-                using (var sw = new StreamWriter(tempFilePath, false, newEncoding))
-                {
-                    var line = "";
-                    while ((line = sr.ReadLine()) != null)
-                        sw.WriteLine(line);
-                }
-                File.Delete(fullPath);
-                File.Copy(tempFilePath, fullPath);
-                File.Delete(tempFilePath);
             }
         }
 

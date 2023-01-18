@@ -223,5 +223,14 @@ namespace Frends.Community.Azure.Blob.Tests
             Assert.AreEqual("testi_asi.aki[{rjasdfs.txt", result.FileName);
             Assert.AreEqual(source.BlobName, result.OriginalFileName);
         }
+
+        [TestMethod]
+        public async Task DownloadBlobAsync_EmptyEncoding()
+        {
+            var source = _source;
+            source.Encoding = "";
+            await DownloadTask.DownloadBlobAsync(_source, _destination, _cancellationToken);
+            Assert.AreEqual(1, Directory.GetFiles(_destinationDirectory).Length);
+        }
     }
 }
