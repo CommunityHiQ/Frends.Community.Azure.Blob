@@ -59,7 +59,9 @@ namespace Frends.Community.Azure.Blob
             else
                 await blob.DownloadToAsync(fullDestinationPath, cancellationToken);
 
-            CheckAndFixFileEncoding(fullDestinationPath, destination.Directory, fileExtension, source.Encoding);
+            if (!string.IsNullOrEmpty(source.Encoding))
+                CheckAndFixFileEncoding(fullDestinationPath, destination.Directory, fileExtension, source.Encoding);
+
             return new DownloadBlobOutput
             {
                 Directory = destination.Directory,
@@ -97,7 +99,7 @@ namespace Frends.Community.Azure.Blob
         /// <returns></returns>
         private static void CheckAndFixFileEncoding(string fullPath, string directory, string fileExtension, string targetEncoding)
         {
-            var encoding = "";
+            string encoding;
             using (var reader = new StreamReader(fullPath, true))
             {
                 reader.Read();
