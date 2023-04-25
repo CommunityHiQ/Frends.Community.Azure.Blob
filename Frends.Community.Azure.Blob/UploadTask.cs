@@ -10,6 +10,7 @@ using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using System.Collections.Generic;
+using System.Linq;
 
 #pragma warning disable CS1591
 
@@ -55,11 +56,7 @@ namespace Frends.Community.Azure.Blob
             else
                 fileName = destinationProperties.RenameTo;
 
-            Dictionary<string, string> tags = new Dictionary<string, string>();
-            if (input.Tags != null)
-                if (input.Tags.Length > 0)
-                    foreach (var tag in input.Tags)
-                        tags.Add(tag.Name, tag.Value);
+            Dictionary<string, string> tags = input.Tags?.ToDictionary(tag => tag.Name, tag => tag.Value);
 
             // return uri to uploaded blob and source file path
 
@@ -339,7 +336,7 @@ namespace Frends.Community.Azure.Blob
         public bool Compress { get; set; }
 
         /// <summary>
-        ///     Tags for the uploaded blob.
+        ///     Tags for the uploaded blob. Should be set to null if the storage account does not support tags.
         /// </summary>
         public Tag[] Tags { get; set; }
     }

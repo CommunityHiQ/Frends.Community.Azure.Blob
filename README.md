@@ -33,12 +33,12 @@ Uploads file to a target container. If the container doesn't exist, it will be c
 
 ### Input
 
-| Property      | Type     | Description                                                           | Example                |
-|---------------|----------|-----------------------------------------------------------------------|------------------------|
-| Source File   | `string` | Full path to file that is uploaded.                                   | 'c:\temp\uploadMe.xml' |
-| Contents Only | `bool`   | Reads file content as string and treats content as selected Encoding. | true                   |
-| Compress      | `bool`   | Applies gzip compression to file or file content.                     | true                   |
-| Tags          | Tag[]    | Index tags for blob.                                                  | See [Tag](#tag)        |
+| Property      | Type     | Description                                                                              | Example                |
+|---------------|----------|------------------------------------------------------------------------------------------|------------------------|
+| Source File   | `string` | Full path to file that is uploaded.                                                      | 'c:\temp\uploadMe.xml' |
+| Contents Only | `bool`   | Reads file content as string and treats content as selected Encoding.                    | true                   |
+| Compress      | `bool`   | Applies gzip compression to file or file content.                                        | true                   |
+| Tags          | Tag[]    | Index tags for blob. Should be set to null if the storage account does not support tags. | See [Tag](#tag)        |
 
 ### Destination properties
 
@@ -281,3 +281,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | 3.1.0   | UploadFileAsync: New feature to add index tags to uploaded blobs.                                                                                 |
 | 3.2.0   | DownloadBlobAsync: Added option to parse illegal characters when Blob is downloaded. Original Blob name added to result object.                   |
 | 3.2.1   | DownloadBlobAsync: Fixed issue with empty encoding parameter.                                                                                     |
+| 3.2.2   | UploadFileAsync: Fixed issue with tags in hierarchical storage accounts.                                                                          |
