@@ -336,7 +336,7 @@ namespace Frends.Community.Azure.Blob
         public bool Compress { get; set; }
 
         /// <summary>
-        ///     Tags for the uploaded blob.
+        ///     Tags for the uploaded blob. Should be set to null if the storage account does not support tags.
         /// </summary>
         public Tag[] Tags { get; set; }
     }
