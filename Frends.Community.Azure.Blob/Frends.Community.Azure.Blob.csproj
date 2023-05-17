@@ -10,7 +10,7 @@
     <IncludeSource>true</IncludeSource>
     <PackageTags>Frends</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>3.2.2</Version>
+    <Version>3.2.3</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,11 +27,9 @@
     <PackageReference Include="Azure.Storage.Blobs" Version="12.10.0" />
 	<PackageReference Include="Azure.Storage.Common" Version="12.9.0" />
 	<PackageReference Include="Azure.Identity" Version="1.7.0" />
-	<PackageReference Include="Azure.Core" Version="1.25.0" />
 	<PackageReference Include="MimeMapping" Version="1.0.1.37" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
-	<PackageReference Include="Microsoft.Identity.Client" Version="4.39.0" />
   </ItemGroup>
 
 </Project>
