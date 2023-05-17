@@ -56,7 +56,7 @@ namespace Frends.Community.Azure.Blob
             else
                 fileName = destinationProperties.RenameTo;
 
-            Dictionary<string, string> tags = input.Tags?.ToDictionary(tag => tag.Name, tag => tag.Value);
+            Dictionary<string, string> tags = input?.Tags?.Length > 0 ? input.Tags.ToDictionary(tag => tag.Name, tag => tag.Value) : null;
 
             // return uri to uploaded blob and source file path
 

@@ -195,6 +195,7 @@ namespace Frends.Community.Azure.Blob.Tests
         }
 
         [TestMethod]
+        [Ignore("pre-existing container has been deleted. Has to be created again.")]
         public async Task DownloadBlobAsync_ParseIllegalCharacters()
         {
             // This test is using pre-existing testi_asi.aki[{rja:sd><fs.txt file in illegalcharactertest,

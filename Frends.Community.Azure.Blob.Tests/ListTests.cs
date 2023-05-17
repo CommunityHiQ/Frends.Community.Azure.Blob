@@ -86,7 +86,7 @@ namespace Frends.Community.Azure.Blob.Tests
             _sourceProperties.FlatBlobListing = true;
             var result = await ListTask.ListBlobs(_sourceProperties, new CancellationToken());
 
-            Assert.AreEqual(2, result.Blobs.Count);
+            Assert.AreEqual(3, result.Blobs.Count);
         }
 
         [TestMethod]

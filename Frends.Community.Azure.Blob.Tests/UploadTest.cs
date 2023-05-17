@@ -82,12 +82,42 @@ namespace Frends.Community.Azure.Blob.Tests
         }
 
         [TestMethod]
+        [Ignore("Tags don't work in hierarchial namespace account. Have to create another test account to test this feature.")]
         public async Task UploadFileAsync_UploadBlockBlobWithTag()
         {
             var Tags = new Tag[]
             {
                 new Tag { Name = "TagName", Value = "TagValue" }
             };
+            var input = new UploadInput
+            {
+                SourceFile = _testFilePath,
+                Tags = Tags
+            };
+            var options = new DestinationProperties
+            {
+                ConnectionMethod = ConnectionMethod.ConnectionString,
+                ContainerName = _containerName,
+                BlobType = AzureBlobType.Block,
+                ParallelOperations = 24,
+                ConnectionString = _connectionString,
+                Overwrite = true,
+                CreateContainerIfItDoesNotExist = true,
+                FileEncoding = "utf-8"
+            };
+            var container = Utils.GetBlobContainer(_connectionString, _containerName);
+
+            var result = await UploadTask.UploadFileAsync(input, options, new CancellationToken());
+            var blobResult = container.GetBlobClient("TestFile.xml");
+
+            StringAssert.EndsWith(result.Uri, $"{_containerName}/TestFile.xml");
+            Assert.IsTrue(blobResult.Exists(), "Uploaded TestFile.xml blob should exist");
+        }
+
+        [TestMethod]
+        public async Task UploadFileAsync_UploadBlockBlobWithEmptyTags()
+        {
+            var Tags = new Tag[]{};
             var input = new UploadInput
             {
                 SourceFile = _testFilePath,
