@@ -24,7 +24,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.10.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.13.0" />
 	<PackageReference Include="Azure.Storage.Common" Version="12.9.0" />
 	<PackageReference Include="Azure.Identity" Version="1.7.0" />
 	<PackageReference Include="MimeMapping" Version="1.0.1.37" />
