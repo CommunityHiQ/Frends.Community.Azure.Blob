@@ -283,3 +283,4 @@ NOTE: Be sure to merge the latest from "upstream" before making a pull request!
 | 3.2.1   | DownloadBlobAsync: Fixed issue with empty encoding parameter.                                                                                     |
 | 3.2.2   | UploadFileAsync: Fixed issue with tags in hierarchical storage accounts.                                                                          |
 | 3.2.3   | UploadFileAsync: Another fix for tags in hierarchical storage accounts. Tags are passed as null if no Tags are provided in parameter editor.      |
+| 3.2.4   | Added dependency reference to Azure.Core 1.32.0 |
