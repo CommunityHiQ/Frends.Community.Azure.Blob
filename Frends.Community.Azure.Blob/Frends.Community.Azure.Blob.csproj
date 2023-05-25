@@ -10,7 +10,7 @@
     <IncludeSource>true</IncludeSource>
     <PackageTags>Frends</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>3.2.3</Version>
+    <Version>3.2.4</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +24,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <PackageReference Include="Azure.Core" Version="1.32.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.10.0" />
 	<PackageReference Include="Azure.Storage.Common" Version="12.9.0" />
 	<PackageReference Include="Azure.Identity" Version="1.7.0" />
