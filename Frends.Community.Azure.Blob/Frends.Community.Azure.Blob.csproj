@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<TargetFrameworks>netstandard2.0;net471</TargetFrameworks>
+	<TargetFrameworks>netstandard2.0;net471;net6.0;net8.0</TargetFrameworks>
     <description>Updated Azure blob task to support Linux agents</description>
     <authors>HiQ Finland</authors>
     <copyright>HiQ Finland</copyright>
@@ -10,7 +10,7 @@
     <IncludeSource>true</IncludeSource>
     <PackageTags>Frends</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>3.2.5</Version>
+    <Version>3.3.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,15 +24,14 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Azure.Core" Version="1.32.0" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.10.0" />
-	<PackageReference Include="Azure.Storage.Common" Version="12.9.0" />
-	<PackageReference Include="Azure.Identity" Version="1.7.0" />
-	<PackageReference Include="Microsoft.Identity.Client" Version="4.39.0" />
-	<PackageReference Include="MimeMapping" Version="1.0.1.37" />
+    <PackageReference Include="Azure.Core" Version="1.44.1" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
+	<PackageReference Include="Azure.Storage.Common" Version="12.22.0" />
+	<PackageReference Include="Azure.Identity" Version="1.13.1" />
+	<PackageReference Include="Microsoft.Identity.Client" Version="4.66.2" />
+	<PackageReference Include="MimeMapping" Version="3.1.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
 
 </Project>
-
